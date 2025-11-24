@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import SdkGuide from './SdkGuide';
+import GettingStartedGuide from './GettingStartedGuide';
 import './docs.css';
 
 type DocCodeSample = {
@@ -42,6 +43,7 @@ const DocsLayout: React.FC = () => {
   const [selectedEndpoint, setSelectedEndpoint] = useState<DocEndpoint | null>(null);
   const [activeCode, setActiveCode] = useState<string>('curl');
   const [showSdkGuide, setShowSdkGuide] = useState<boolean>(false);
+  const [showGettingStarted, setShowGettingStarted] = useState<boolean>(false);
 
   useEffect(() => {
     // agent gets agent-filtered docs
@@ -61,9 +63,22 @@ const DocsLayout: React.FC = () => {
       <aside className="docs-sidebar">
         <div className="docs-cat">
           <button
+            className={`docs-endpoint-btn ${showGettingStarted ? 'active' : ''}`}
+            onClick={() => {
+              setShowGettingStarted(true);
+              setShowSdkGuide(false);
+              setSelectedEndpoint(null);
+            }}
+            style={{ width: '100%', justifyContent: 'flex-start', padding: '0.5rem', marginBottom: '0.5rem' }}
+          >
+            <span style={{ fontSize: '1rem', marginRight: '0.5rem' }}>🚀</span>
+            <span style={{ fontWeight: 600 }}>Getting Started</span>
+          </button>
+          <button
             className={`docs-endpoint-btn ${showSdkGuide ? 'active' : ''}`}
             onClick={() => {
               setShowSdkGuide(true);
+              setShowGettingStarted(false);
               setSelectedEndpoint(null);
             }}
             style={{ width: '100%', justifyContent: 'flex-start', padding: '0.5rem' }}
@@ -76,26 +91,55 @@ const DocsLayout: React.FC = () => {
           <div key={cat.id} className="docs-cat">
             <div className="docs-cat-title">{cat.name}</div>
             {cat.endpoints.map((ep) => (
-              <button
-                key={ep.id}
-                className={`docs-endpoint-btn ${selectedEndpoint?.id === ep.id ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedEndpoint(ep);
-                  setActiveCode(ep.codeSamples?.[0]?.lang ?? 'curl');
-                  setShowSdkGuide(false);
-                }}
-              >
-                <span className="method" style={{ background: METHOD_COLORS[ep.method] || '#6b7280' }}>
-                  {ep.method}
-                </span>
-                <span className="path">{ep.path}</span>
-              </button>
+              <div key={ep.id} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <button
+                  className={`docs-endpoint-btn ${selectedEndpoint?.id === ep.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedEndpoint(ep);
+                    setActiveCode(ep.codeSamples?.[0]?.lang ?? 'curl');
+                    setShowSdkGuide(false);
+                    setShowGettingStarted(false);
+                  }}
+                  style={{ flex: 1 }}
+                >
+                  <span className="method" style={{ background: METHOD_COLORS[ep.method] || '#6b7280' }}>
+                    {ep.method}
+                  </span>
+                  <span className="path">{ep.path}</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`/docs-fullscreen/${ep.id}`, '_blank');
+                  }}
+                  title="Open in new tab"
+                  style={{
+                    padding: '0.25rem',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: 0.6,
+                    transition: 'opacity 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 2H4C3.44772 2 3 2.44772 3 3V12C3 12.5523 3.44772 13 4 13H13C13.5523 13 14 12.5523 14 12V6M10 2L14 6M10 2V6H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             ))}
           </div>
         ))}
       </aside>
       <main className="docs-main">
-        {showSdkGuide ? (
+        {showGettingStarted ? (
+          <GettingStartedGuide />
+        ) : showSdkGuide ? (
           <SdkGuide role="agent" />
         ) : (
           <>
@@ -125,207 +169,326 @@ const DocsLayout: React.FC = () => {
         )}
         
         {selectedEndpoint && (
-          <>
-            <h1>{selectedEndpoint.name}</h1>
-            <p>{selectedEndpoint.description}</p>
-            <div className="endpoint-meta">
-              <span className="method-tag" style={{ background: METHOD_COLORS[selectedEndpoint.method] || '#6b7280' }}>
-                {selectedEndpoint.method}
-              </span>
-              <code className="path-code">{selectedEndpoint.path}</code>
+          <div style={{ display: 'flex', gap: '2rem' }}>
+            {/* Main Content Area */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1>{selectedEndpoint.name}</h1>
+              {selectedEndpoint.description && (
+                <p style={{ color: '#6b7280', marginBottom: '2rem' }}>{selectedEndpoint.description}</p>
+              )}
+
+              {/* 1. URL Section - First */}
+              <section style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0, color: '#111827' }}>URL</h2>
+                  <button
+                    onClick={() => window.open(`/docs-fullscreen/${selectedEndpoint.id}`, '_blank')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 1rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0, 0, 0, 0.1)';
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 2H4C3.44772 2 3 2.44772 3 3V12C3 12.5523 3.44772 13 4 13H13C13.5523 13 14 12.5523 14 12V6M10 2L14 6M10 2V6H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Open in New Tab
+                  </button>
+                </div>
+                <div className="endpoint-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: '#ffffff', borderRadius: '0.5rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }}>
+                  <span className="method-tag" style={{ background: METHOD_COLORS[selectedEndpoint.method] || '#6b7280', color: '#fff', fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '9999px', fontWeight: 600, letterSpacing: '0.025em' }}>
+                    {selectedEndpoint.method}
+                  </span>
+                  <code className="path-code" style={{ background: '#1f2937', color: '#fff', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '0.875rem', fontFamily: 'monospace', fontWeight: 500 }}>
+                    {selectedEndpoint.path}
+                  </code>
+                </div>
+              </section>
+
+              {/* 2. Request Items Section */}
+              <section style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#111827' }}>Request</h2>
+
+                {selectedEndpoint.headers && selectedEndpoint.headers.length > 0 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Headers</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Header</th>
+                          <th>Required</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedEndpoint.headers.map((h) => (
+                          <tr key={h.name}>
+                            <td><code style={{ background: '#f3f4f6', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.8125rem' }}>{h.name}</code></td>
+                            <td>{h.required ? <span style={{ color: '#ef4444' }}>yes</span> : <span style={{ color: '#6b7280' }}>no</span>}</td>
+                            <td>{h.description ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {selectedEndpoint.query && selectedEndpoint.query.length > 0 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Query Parameters</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Param</th>
+                          <th>Required</th>
+                          <th>Type</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedEndpoint.query.map((q) => (
+                          <tr key={q.name}>
+                            <td><code style={{ background: '#f3f4f6', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.8125rem' }}>{q.name}</code></td>
+                            <td>{q.required ? <span style={{ color: '#ef4444' }}>yes</span> : <span style={{ color: '#6b7280' }}>no</span>}</td>
+                            <td><span style={{ color: '#3b82f6' }}>{q.type ?? '-'}</span></td>
+                            <td>{q.description ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {selectedEndpoint.body && selectedEndpoint.body.length > 0 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Body</h3>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Field</th>
+                          <th>Required</th>
+                          <th>Type</th>
+                          <th>Description</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedEndpoint.body.map((b) => (
+                          <tr key={b.name}>
+                            <td><code style={{ background: '#f3f4f6', padding: '0.125rem 0.375rem', borderRadius: '0.25rem', fontSize: '0.8125rem' }}>{b.name}</code></td>
+                            <td>{b.required ? <span style={{ color: '#ef4444' }}>yes</span> : <span style={{ color: '#6b7280' }}>no</span>}</td>
+                            <td><span style={{ color: '#3b82f6' }}>{b.type ?? '-'}</span></td>
+                            <td>{b.description ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {(!selectedEndpoint.headers || selectedEndpoint.headers.length === 0) && 
+                 (!selectedEndpoint.query || selectedEndpoint.query.length === 0) && 
+                 (!selectedEndpoint.body || selectedEndpoint.body.length === 0) && (
+                  <p style={{ color: '#6b7280', fontStyle: 'italic' }}>No request parameters required.</p>
+                )}
+              </section>
+
+              {/* 3. Response Section */}
+              {selectedEndpoint.responses && selectedEndpoint.responses.length > 0 && (
+                <section style={{ marginBottom: '2rem' }}>
+                  <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: '#111827' }}>Response</h2>
+                  {selectedEndpoint.responses.map((resp, idx) => (
+                    <div key={idx} style={{ 
+                      marginBottom: '1.5rem', 
+                      padding: '1.5rem', 
+                      backgroundColor: '#ffffff', 
+                      borderRadius: '0.5rem', 
+                      border: '1px solid #e5e7eb',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <span style={{ 
+                          fontWeight: 600, 
+                          fontSize: '0.875rem',
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '0.375rem',
+                          background: resp.status >= 200 && resp.status < 300 ? '#d1fae5' : resp.status >= 400 ? '#fee2e2' : '#fef3c7',
+                          color: resp.status >= 200 && resp.status < 300 ? '#065f46' : resp.status >= 400 ? '#991b1b' : '#92400e',
+                          letterSpacing: '0.025em'
+                        }}>
+                          {resp.status}
+                        </span>
+                        <span style={{ fontWeight: 500, color: '#374151', fontSize: '0.875rem' }}>{resp.description || 'Response'}</span>
+                      </div>
+                      {resp.bodyExample && (
+                        <pre className="code-block" style={{ 
+                          margin: 0,
+                          background: '#1e293b',
+                          color: '#e2e8f0',
+                          padding: '1.5rem',
+                          borderRadius: '0.5rem',
+                          overflow: 'auto',
+                          boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)'
+                        }}>
+                          <code style={{ fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', monospace", fontSize: '0.875rem', lineHeight: '1.6' }}>
+                            {JSON.stringify(resp.bodyExample, null, 2)}
+                          </code>
+                        </pre>
+                      )}
+                    </div>
+                  ))}
+                </section>
+              )}
+
+              {/* SDK Guide Link at Bottom */}
+              <section style={{ marginTop: '3rem', padding: '1.5rem', backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.5rem' }}>📚 SDK Guide</h3>
+                    <p style={{ fontSize: '0.875rem', color: '#075985', margin: 0 }}>
+                      Learn how to integrate using our official SDKs with code examples and best practices.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowSdkGuide(true);
+                      setSelectedEndpoint(null);
+                    }}
+                    style={{
+                      padding: '0.625rem 1.25rem',
+                      backgroundColor: '#0284c7',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0369a1'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#0284c7'}
+                  >
+                    View SDK Guide →
+                  </button>
+                </div>
+              </section>
             </div>
 
-            {selectedEndpoint.headers && selectedEndpoint.headers.length > 0 && (
-              <section>
-                <h2>Headers</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Header</th>
-                      <th>Required</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedEndpoint.headers.map((h) => (
-                      <tr key={h.name}>
-                        <td>{h.name}</td>
-                        <td>{h.required ? 'yes' : 'no'}</td>
-                        <td>{h.description ?? '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            )}
-
-            {selectedEndpoint.query && selectedEndpoint.query.length > 0 && (
-              <section>
-                <h2>Query Params</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Param</th>
-                      <th>Required</th>
-                      <th>Type</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedEndpoint.query.map((q) => (
-                      <tr key={q.name}>
-                        <td>{q.name}</td>
-                        <td>{q.required ? 'yes' : 'no'}</td>
-                        <td>{q.type ?? '-'}</td>
-                        <td>{q.description ?? '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            )}
-
-            {selectedEndpoint.body && selectedEndpoint.body.length > 0 && (
-              <section>
-                <h2>Body</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Field</th>
-                      <th>Required</th>
-                      <th>Type</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedEndpoint.body.map((b) => (
-                      <tr key={b.name}>
-                        <td>{b.name}</td>
-                        <td>{b.required ? 'yes' : 'no'}</td>
-                        <td>{b.type ?? '-'}</td>
-                        <td>{b.description ?? '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            )}
-
-            {selectedEndpoint.responses && selectedEndpoint.responses.length > 0 && (
-              <section>
-                <h2>Responses</h2>
-                {selectedEndpoint.responses.map((resp, idx) => (
-                  <div key={idx} style={{ marginBottom: '1rem' }}>
-                    <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                      {resp.status} {resp.description}
+            {/* Right Sidebar - Format/Schema Information */}
+            <aside style={{ width: '320px', flexShrink: 0 }}>
+              <div style={{ position: 'sticky', top: '1.5rem' }}>
+                <div style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Format</h3>
+                  
+                  {/* Request Format */}
+                  {(selectedEndpoint.body && selectedEndpoint.body.length > 0) && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.75rem' }}>Request Format</h4>
+                      <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#374151', fontFamily: 'monospace', lineHeight: '1.6' }}>
+                          <div style={{ color: '#3b82f6' }}>{'{'}</div>
+                          {selectedEndpoint.body.slice(0, 3).map((b, idx) => (
+                            <div key={idx} style={{ paddingLeft: '0.75rem' }}>
+                              <span style={{ color: '#059669' }}>"{b.name}"</span>
+                              <span style={{ color: '#6b7280' }}>: </span>
+                              <span style={{ color: '#3b82f6' }}>{b.type || 'string'}</span>
+                              {b.required && <span style={{ color: '#ef4444', marginLeft: '0.25rem' }}>*</span>}
+                              {idx < Math.min(selectedEndpoint.body.length, 3) - 1 && <span style={{ color: '#6b7280' }}>,</span>}
+                            </div>
+                          ))}
+                          {selectedEndpoint.body.length > 3 && (
+                            <div style={{ paddingLeft: '0.75rem', color: '#6b7280', fontStyle: 'italic' }}>...</div>
+                          )}
+                          <div style={{ color: '#3b82f6' }}>{'}'}</div>
+                        </div>
+                      </div>
                     </div>
-                    {resp.bodyExample && (
-                      <pre className="code-block">
-                        {JSON.stringify(resp.bodyExample, null, 2)}
-                      </pre>
+                  )}
+
+                  {/* Response Format - Always show if endpoint has responses */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.75rem' }}>Response Format</h4>
+                    {selectedEndpoint.responses && selectedEndpoint.responses.length > 0 ? (
+                      selectedEndpoint.responses[0].bodyExample ? (
+                        <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', maxHeight: '200px', overflow: 'auto' }}>
+                          <pre style={{ margin: 0, fontSize: '0.7rem', color: '#374151', fontFamily: 'monospace', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            {(() => {
+                              try {
+                                const jsonStr = JSON.stringify(selectedEndpoint.responses[0].bodyExample, null, 2);
+                                const lines = jsonStr.split('\n');
+                                if (lines.length > 15) {
+                                  return lines.slice(0, 15).join('\n') + '\n  ...';
+                                }
+                                return jsonStr;
+                              } catch (e) {
+                                return String(selectedEndpoint.responses[0].bodyExample);
+                              }
+                            })()}
+                          </pre>
+                        </div>
+                      ) : (
+                        <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            <span style={{ fontWeight: 600 }}>Status:</span> {selectedEndpoint.responses[0].status} {selectedEndpoint.responses[0].description || ''}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.5rem' }}>
+                            Response format details not available
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontStyle: 'italic' }}>
+                          No response information available
+                        </div>
+                      </div>
                     )}
                   </div>
-                ))}
-              </section>
-            )}
 
-            {(selectedEndpoint.codeSamples && selectedEndpoint.codeSamples.length > 0) && (
-              <section>
-                <h2>Code Samples</h2>
-                <div className="code-tabs">
-                  {selectedEndpoint.codeSamples.map((cs) => (
-                    <button
-                      key={cs.lang}
-                      className={activeCode === cs.lang ? 'active' : ''}
-                      onClick={() => setActiveCode(cs.lang)}
-                    >
-                      {cs.label}
-                    </button>
-                  ))}
-                </div>
-                <pre className="code-block">
-                  {(selectedEndpoint.codeSamples).find((cs) => cs.lang === activeCode)?.code ??
-                    '# No sample available'}
-                </pre>
-              </section>
-            )}
-
-            <section>
-              <h2>Try it</h2>
-              <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>Later we will wire this to real runner / SDKs. For now this is a placeholder.</p>
-              <div className="try-box">
-                <input type="text" defaultValue={selectedEndpoint.path} readOnly />
-                <button>Send</button>
-              </div>
-            </section>
-
-            <section>
-              <h2>SDKs & Clients</h2>
-              <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1.5rem' }}>
-                <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                  Use our official SDKs to integrate faster and handle authentication automatically:
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
-                  <button
-                    onClick={() => {
-                      setShowSdkGuide(true);
-                      setSelectedEndpoint(null);
-                    }}
-                    style={{ backgroundColor: '#fff', border: '2px solid #10b981', borderRadius: '0.375rem', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                  >
-                    <div style={{ fontSize: '1.25rem' }}>🐹</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Go</div>
-                      <div style={{ fontSize: '0.75rem', color: '#10b981' }}>Available</div>
-                    </div>
-                  </button>
-                  <div style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.375rem', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ fontSize: '1.25rem' }}>🌐</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>JavaScript/TS</div>
-                      <div style={{ fontSize: '0.75rem', color: '#10b981' }}>Available</div>
+                  {/* Authentication */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.75rem' }}>Authentication</h4>
+                    <div style={{ fontSize: '0.75rem', color: '#374151' }}>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <code style={{ background: '#f3f4f6', padding: '0.125rem 0.375rem', borderRadius: '0.25rem' }}>Authorization</code>
+                        <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>Bearer token</span>
+                      </div>
+                      <div style={{ color: '#6b7280', fontSize: '0.7rem', marginTop: '0.5rem' }}>
+                        Include your JWT token in the Authorization header
+                      </div>
                     </div>
                   </div>
-                  <div style={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.375rem', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.7 }}>
-                    <div style={{ fontSize: '1.25rem' }}>🐍</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Python</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Coming soon</div>
-                    </div>
+
+                  {/* Base URL */}
+                  <div>
+                    <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.75rem' }}>Base URL</h4>
+                    <code style={{ background: '#f3f4f6', padding: '0.375rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.75rem', display: 'block', wordBreak: 'break-all' }}>
+                      {typeof window !== 'undefined' ? window.location.origin : 'https://api.example.com'}
+                    </code>
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowSdkGuide(true);
-                      setSelectedEndpoint(null);
-                    }}
-                    style={{ backgroundColor: '#fff', border: '1px solid #10b981', borderRadius: '0.375rem', padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', width: '100%', textAlign: 'left' }}
-                  >
-                    <div style={{ fontSize: '1.25rem' }}>🐘</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>PHP</div>
-                      <div style={{ fontSize: '0.75rem', color: '#10b981' }}>Available</div>
-                    </div>
-                  </button>
-                </div>
-                <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: '0.375rem' }}>
-                  <p style={{ fontSize: '0.75rem', color: '#1e40af', marginBottom: '0.5rem' }}>
-                    💡 <strong>Note:</strong> Use our official SDKs to integrate faster and handle authentication automatically.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setShowSdkGuide(true);
-                      setSelectedEndpoint(null);
-                    }}
-                    style={{ fontSize: '0.75rem', color: '#1e40af', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                  >
-                    📚 View SDK Guide →
-                  </button>
                 </div>
               </div>
-            </section>
-          </>
+            </aside>
+          </div>
         )}
-        {!showSdkGuide && !selectedEndpoint && (
+        {!showGettingStarted && !showSdkGuide && !selectedEndpoint && (
           <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
             <p>Select an endpoint from the sidebar to view documentation</p>
           </div>

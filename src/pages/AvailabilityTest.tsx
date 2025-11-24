@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
 import { Loader } from '../components/ui/Loader'
 import { Badge } from '../components/ui/Badge'
 import api from '../lib/api'
+import { locationsApi, Location } from '../api/locations'
 import toast from 'react-hot-toast'
 
 interface AvailabilityOffer {
@@ -39,6 +41,17 @@ export default function AvailabilityTest() {
   const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([])
   const [dropoffSuggestions, setDropoffSuggestions] = useState<any[]>([])
   const [totalExpected, setTotalExpected] = useState<number | null>(null)
+  const [locationSearch, setLocationSearch] = useState({ pickup: '', dropoff: '' })
+
+  // Fetch all UN/LOCODEs for dropdown
+  const { data: locationsData, isLoading: isLoadingLocations } = useQuery({
+    queryKey: ['locations', 'all'],
+    queryFn: async () => {
+      // Fetch all locations with a high limit
+      const result = await locationsApi.listLocations({ limit: 1000 })
+      return result.items || []
+    },
+  })
 
   const [requestId, setRequestId] = useState<string | null>(null)
   const [offers, setOffers] = useState<AvailabilityOffer[]>([])
@@ -117,14 +130,13 @@ export default function AvailabilityTest() {
     submit.mutate()
   }
 
-  // Simple location autocomplete against middleware /locations?query=
-  // If an agreement is selected, use its allowed locations for both fields
+  // If an agreement is selected, use its allowed locations
   useEffect(() => {
     const load = async () => {
       if (!selectedAgreementId) return
       try {
         const { data } = await api.get(`/agreements/${selectedAgreementId}/locations`)
-        const items = (data?.items ?? []).map((i: any) => ({ unlocode: i.unlocode }))
+        const items = (data?.items ?? []).map((i: any) => ({ unlocode: i.unlocode, place: i.place || i.name, country: i.country }))
         setPickupSuggestions(items)
         setDropoffSuggestions(items)
         const ag = agreements.find(a => a.id === selectedAgreementId)
@@ -132,7 +144,7 @@ export default function AvailabilityTest() {
       } catch {}
     }
     load()
-  }, [selectedAgreementId])
+  }, [selectedAgreementId, agreements])
 
   useEffect(() => {
     // Load agent agreements (ACTIVE preferred)
@@ -146,41 +158,69 @@ export default function AvailabilityTest() {
     load()
   }, [])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    const q = pickup.trim()
-    if (!selectedAgreementId && q.length >= 2) {
-      const t = setTimeout(async () => {
-        try {
-          const { data } = await api.get('/locations', { params: { query: q }, signal: controller.signal as any })
-          const items = (data?.data ?? data ?? []).slice(0, 6)
-          setPickupSuggestions(items)
-        } catch {}
-      }, 250)
-      return () => clearTimeout(t)
-    } else {
-      if (!selectedAgreementId) setPickupSuggestions([])
+  // Filter locations based on search and agreement selection
+  const filteredPickupLocations = useMemo(() => {
+    if (selectedAgreementId && pickupSuggestions.length > 0) {
+      // If agreement is selected, use agreement locations
+      if (!locationSearch.pickup) return pickupSuggestions
+      const search = locationSearch.pickup.toLowerCase()
+      return pickupSuggestions.filter((loc: any) => 
+        loc.unlocode?.toLowerCase().includes(search) ||
+        loc.place?.toLowerCase().includes(search) ||
+        loc.country?.toLowerCase().includes(search)
+      )
     }
-    return () => controller.abort()
-  }, [pickup])
+    // Otherwise, use all locations from database
+    if (!locationsData) return []
+    if (!locationSearch.pickup) return locationsData
+    const search = locationSearch.pickup.toLowerCase()
+    return locationsData.filter((loc) =>
+      loc.unlocode.toLowerCase().includes(search) ||
+      loc.place.toLowerCase().includes(search) ||
+      loc.country.toLowerCase().includes(search) ||
+      (loc.iata_code && loc.iata_code.toLowerCase().includes(search))
+    )
+  }, [locationSearch.pickup, locationsData, selectedAgreementId, pickupSuggestions])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    const q = dropoff.trim()
-    if (!selectedAgreementId && q.length >= 2) {
-      const t = setTimeout(async () => {
-        try {
-          const { data } = await api.get('/locations', { params: { query: q }, signal: controller.signal as any })
-          const items = (data?.data ?? data ?? []).slice(0, 6)
-          setDropoffSuggestions(items)
-        } catch {}
-      }, 250)
-      return () => clearTimeout(t)
-    } else {
-      if (!selectedAgreementId) setDropoffSuggestions([])
+  const filteredDropoffLocations = useMemo(() => {
+    if (selectedAgreementId && dropoffSuggestions.length > 0) {
+      // If agreement is selected, use agreement locations
+      if (!locationSearch.dropoff) return dropoffSuggestions
+      const search = locationSearch.dropoff.toLowerCase()
+      return dropoffSuggestions.filter((loc: any) => 
+        loc.unlocode?.toLowerCase().includes(search) ||
+        loc.place?.toLowerCase().includes(search) ||
+        loc.country?.toLowerCase().includes(search)
+      )
     }
-    return () => controller.abort()
-  }, [dropoff])
+    // Otherwise, use all locations from database
+    if (!locationsData) return []
+    if (!locationSearch.dropoff) return locationsData
+    const search = locationSearch.dropoff.toLowerCase()
+    return locationsData.filter((loc) =>
+      loc.unlocode.toLowerCase().includes(search) ||
+      loc.place.toLowerCase().includes(search) ||
+      loc.country.toLowerCase().includes(search) ||
+      (loc.iata_code && loc.iata_code.toLowerCase().includes(search))
+    )
+  }, [locationSearch.dropoff, locationsData, selectedAgreementId, dropoffSuggestions])
+
+  // Create options for Select components
+  const pickupOptions = [
+    { value: '', label: '-- Select Pickup Location --' },
+    ...filteredPickupLocations.map((loc: any) => ({
+      value: loc.unlocode,
+      label: `${loc.unlocode} - ${loc.place || loc.name || 'Unknown'}, ${loc.country}${loc.iata_code ? ` (${loc.iata_code})` : ''}`,
+    })),
+  ]
+
+  const dropoffOptions = [
+    { value: '', label: '-- Select Dropoff Location --' },
+    ...filteredDropoffLocations.map((loc: any) => ({
+      value: loc.unlocode,
+      label: `${loc.unlocode} - ${loc.place || loc.name || 'Unknown'}, ${loc.country}${loc.iata_code ? ` (${loc.iata_code})` : ''}`,
+    })),
+  ]
 
   return (
     <div className="space-y-6">
@@ -213,28 +253,50 @@ export default function AvailabilityTest() {
                   ))}
                 </select>
               </div>
-              <div>
-                <Input label="Pickup (UN/LOCODE)" placeholder="GBMAN" value={pickup} onChange={(e: any) => setPickup(e.target.value)} />
-                {pickupSuggestions.length > 0 && (
-                  <div className="mt-1 bg-white border rounded-lg shadow max-h-40 overflow-auto">
-                    {pickupSuggestions.map((s) => (
-                      <button key={s.unlocode} type="button" onClick={() => setPickup(s.unlocode)} className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm">
-                        {s.unlocode} — {s.name} {s.country && <span className="text-gray-500">({s.country})</span>}
-                      </button>
-                    ))}
-                  </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Pickup (UN/LOCODE)</label>
+                <Input
+                  placeholder="Search locations..."
+                  value={locationSearch.pickup}
+                  onChange={(e) => setLocationSearch({ ...locationSearch, pickup: e.target.value })}
+                  className="mb-2"
+                />
+                <Select
+                  options={pickupOptions}
+                  value={pickup}
+                  onChange={(e) => {
+                    setPickup(e.target.value)
+                    if (e.target.value) {
+                      setLocationSearch({ ...locationSearch, pickup: '' })
+                    }
+                  }}
+                  disabled={isLoadingLocations}
+                />
+                {isLoadingLocations && (
+                  <p className="text-xs text-gray-500">Loading locations...</p>
                 )}
               </div>
-              <div>
-                <Input label="Dropoff (UN/LOCODE)" placeholder="GBGLA" value={dropoff} onChange={(e: any) => setDropoff(e.target.value)} />
-                {dropoffSuggestions.length > 0 && (
-                  <div className="mt-1 bg-white border rounded-lg shadow max-h-40 overflow-auto">
-                    {dropoffSuggestions.map((s) => (
-                      <button key={s.unlocode} type="button" onClick={() => setDropoff(s.unlocode)} className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm">
-                        {s.unlocode} — {s.name} {s.country && <span className="text-gray-500">({s.country})</span>}
-                      </button>
-                    ))}
-                  </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Dropoff (UN/LOCODE)</label>
+                <Input
+                  placeholder="Search locations..."
+                  value={locationSearch.dropoff}
+                  onChange={(e) => setLocationSearch({ ...locationSearch, dropoff: e.target.value })}
+                  className="mb-2"
+                />
+                <Select
+                  options={dropoffOptions}
+                  value={dropoff}
+                  onChange={(e) => {
+                    setDropoff(e.target.value)
+                    if (e.target.value) {
+                      setLocationSearch({ ...locationSearch, dropoff: '' })
+                    }
+                  }}
+                  disabled={isLoadingLocations}
+                />
+                {isLoadingLocations && (
+                  <p className="text-xs text-gray-500">Loading locations...</p>
                 )}
               </div>
               <Input label="Driver Age" placeholder="30" value={driverAge} onChange={(e: any) => setDriverAge(e.target.value)} />

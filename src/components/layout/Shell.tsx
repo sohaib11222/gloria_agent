@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut, Bell } from 'lucide-react'
 
 export const Shell: React.FC = () => {
-  const location = useLocation()
   const navigate = useNavigate()
   const navItems = [
     { path: '/agent', label: 'Dashboard' },
     { path: '/availability', label: 'Availability' },
     { path: '/agreements', label: 'Agreements' },
     { path: '/bookings', label: 'My Bookings' },
+    { path: '/locations', label: 'Locations' },
     { path: '/docs', label: 'API Reference' },
   ]
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [unreadNotifications, setUnreadNotifications] = useState(2) // Mock count
+  const [unreadNotifications] = useState(2) // Mock count
   const user = (() => {
     try { return JSON.parse(localStorage.getItem('user') || 'null') } catch { return null }
   })()
@@ -39,21 +39,39 @@ export const Shell: React.FC = () => {
         </div>
         
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          {navItems.map((item) => {
+            if (item.path === '/docs') {
+              return (
+                <a
+                  key={item.path}
+                  href="/docs-fullscreen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  {item.label}
+                  <svg className="ml-2 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )
+            }
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            )
+          })}
         </nav>
 
         <div className="p-3 border-t border-gray-200">
@@ -124,22 +142,41 @@ export const Shell: React.FC = () => {
         {mobileOpen && (
           <div className="lg:hidden bg-white border-b border-gray-200 shadow-lg">
             <nav className="px-3 py-2 space-y-1">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-3 py-2 rounded-lg text-sm font-medium ${
-                      isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
+              {navItems.map((item) => {
+                if (item.path === '/docs') {
+                  return (
+                    <a
+                      key={item.path}
+                      href="/docs-fullscreen"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      {item.label}
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )
+                }
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      `block px-3 py-2 rounded-lg text-sm font-medium ${
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                      }`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                )
+              })}
             </nav>
           </div>
         )}

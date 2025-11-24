@@ -8,7 +8,11 @@ import { Copy } from './ui/Copy'
 import { Input } from './ui/Input'
 import toast from 'react-hot-toast'
 
-export const EndpointConfiguration: React.FC = () => {
+interface EndpointConfigurationProps {
+  onConfigUpdated?: () => void
+}
+
+export const EndpointConfiguration: React.FC<EndpointConfigurationProps> = ({ onConfigUpdated }) => {
   const [endpointConfig, setEndpointConfig] = useState<EndpointConfig | null>(null)
   const [isLoadingEndpoints, setIsLoadingEndpoints] = useState(false)
   const [isUpdatingEndpoints, setIsUpdatingEndpoints] = useState(false)
@@ -67,6 +71,11 @@ export const EndpointConfiguration: React.FC = () => {
       
       // Reload endpoint configuration
       await loadEndpointConfig()
+      
+      // Notify parent component
+      if (onConfigUpdated) {
+        onConfigUpdated()
+      }
     } catch (error: any) {
       console.error('Failed to update endpoints:', error)
       toast.error(error.response?.data?.message || 'Failed to update endpoints')

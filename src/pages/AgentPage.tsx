@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import toast from 'react-hot-toast'
 import { agreementsOffersApi } from '../api/agreementsOffers'
+import { endpointsApi } from '../api/endpoints'
 
 export default function AgentPage() {
   const navigate = useNavigate()
@@ -19,6 +20,8 @@ export default function AgentPage() {
   const [grpcConfigured, setGrpcConfigured] = useState(false)
   const [agreementAccepted, setAgreementAccepted] = useState(false)
   const [allAgreements, setAllAgreements] = useState<any[]>([])
+  const [showEndpointConfig, setShowEndpointConfig] = useState(false)
+  const [showBookingTest, setShowBookingTest] = useState(false)
 
   useEffect(() => {
     // Load user data from localStorage
@@ -28,31 +31,52 @@ export default function AgentPage() {
       setUser(parsedUser)
     }
 
-    // Check if booking test has been completed
-    const testCompleted = localStorage.getItem('bookingTestCompleted')
-    if (testCompleted === 'true') {
-      setBookingTestCompleted(true)
-    }
-
-    // Load pending offers count for notifications bell
-    const loadOffers = async () => {
-      try {
-        const res = await agreementsOffersApi.getOffers()
-        setAllAgreements(res.items)
-        setPendingOffers(res.items.filter(i => i.status === 'OFFERED').length)
-        // Set agreement accepted if any accepted
-        const anyAccepted = res.items.some(i => i.status === 'ACCEPTED')
-        if (anyAccepted) setAgreementAccepted(true)
-      } catch {}
-    }
-    loadOffers()
-    const intv = setInterval(loadOffers, 5000)
-    return () => clearInterval(intv)
+    // Load setup status
+    loadSetupStatus()
   }, [])
+
+  const loadSetupStatus = async () => {
+    try {
+      // Check endpoint configuration
+      const endpointConfig = await endpointsApi.getConfig()
+      setHttpConfigured(!!endpointConfig.httpEndpoint)
+      setGrpcConfigured(!!endpointConfig.grpcEndpoint)
+
+      // Check if booking test has been completed
+      const testCompleted = localStorage.getItem('bookingTestCompleted')
+      if (testCompleted === 'true') {
+        setBookingTestCompleted(true)
+      }
+
+      // Load pending offers count and check agreement acceptance
+      const loadOffers = async () => {
+        try {
+          const res = await agreementsOffersApi.getOffers()
+          setAllAgreements(res.items)
+          setPendingOffers(res.items.filter(i => i.status === 'OFFERED').length)
+          // Set agreement accepted if any accepted
+          const anyAccepted = res.items.some(i => i.status === 'ACCEPTED')
+          if (anyAccepted) setAgreementAccepted(true)
+        } catch {}
+      }
+      await loadOffers()
+      const intv = setInterval(loadOffers, 5000)
+      return () => clearInterval(intv)
+    } catch (error) {
+      console.error('Failed to load setup status:', error)
+    }
+  }
 
   const handleBookingTestCompleted = () => {
     setBookingTestCompleted(true)
     localStorage.setItem('bookingTestCompleted', 'true')
+    loadSetupStatus() // Refresh status
+    setShowBookingTest(false) // Hide the test section after completion
+  }
+
+  const handleEndpointConfigUpdated = () => {
+    loadSetupStatus() // Refresh status
+    setShowEndpointConfig(false) // Hide the config section after completion
   }
 
   const handleLogout = () => {
@@ -176,43 +200,127 @@ export default function AgentPage() {
       </Card>
 
       {/* Onboarding steps */}
-      {(!bookingTestCompleted || !agreementAccepted) && (
+      {(!httpConfigured || !grpcConfigured || !bookingTestCompleted || !agreementAccepted) && (
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
           <CardHeader>
             <CardTitle className="text-blue-900">Complete Your Setup</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex items-start space-x-4">
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${bookingTestCompleted ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  1
+              <div 
+                className={`flex items-start space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${!httpConfigured || !grpcConfigured ? 'bg-white hover:bg-blue-50' : ''}`}
+                onClick={() => {
+                  if (!httpConfigured || !grpcConfigured) {
+                    setShowEndpointConfig(true)
+                    setShowBookingTest(false)
+                  }
+                }}
+              >
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${httpConfigured && grpcConfigured ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                  {httpConfigured && grpcConfigured ? '✓' : '1'}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900">Configure Endpoints</h4>
                   <p className="text-sm text-gray-600 mt-1">Set up your HTTP and gRPC endpoints</p>
+                  {(!httpConfigured || !grpcConfigured) && (
+                    <Button 
+                      size="sm" 
+                      variant="primary" 
+                      className="mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowEndpointConfig(true)
+                        setShowBookingTest(false)
+                      }}
+                    >
+                      Configure Now
+                    </Button>
+                  )}
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${bookingTestCompleted ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  2
+              <div 
+                className={`flex items-start space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${!bookingTestCompleted && httpConfigured && grpcConfigured ? 'bg-white hover:bg-blue-50' : ''}`}
+                onClick={() => {
+                  if (!bookingTestCompleted && httpConfigured && grpcConfigured) {
+                    setShowBookingTest(true)
+                    setShowEndpointConfig(false)
+                  }
+                }}
+              >
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${bookingTestCompleted ? 'bg-green-500 text-white' : httpConfigured && grpcConfigured ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                  {bookingTestCompleted ? '✓' : '2'}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900">Run Booking Test</h4>
                   <p className="text-sm text-gray-600 mt-1">Complete the booking integration test</p>
+                  {!bookingTestCompleted && httpConfigured && grpcConfigured && (
+                    <Button 
+                      size="sm" 
+                      variant="primary" 
+                      className="mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowBookingTest(true)
+                        setShowEndpointConfig(false)
+                      }}
+                    >
+                      Run Test
+                    </Button>
+                  )}
+                  {(!httpConfigured || !grpcConfigured) && (
+                    <p className="text-xs text-gray-500 mt-2">Complete step 1 first</p>
+                  )}
                 </div>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${agreementAccepted ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  3
+              <div 
+                className={`flex items-start space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${!agreementAccepted && bookingTestCompleted ? 'bg-white hover:bg-blue-50' : ''}`}
+                onClick={() => {
+                  if (!agreementAccepted && bookingTestCompleted) {
+                    navigate('/agreements')
+                  }
+                }}
+              >
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${agreementAccepted ? 'bg-green-500 text-white' : bookingTestCompleted ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                  {agreementAccepted ? '✓' : '3'}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900">Accept Agreement</h4>
                   <p className="text-sm text-gray-600 mt-1">Activate your agreement offers</p>
+                  {!agreementAccepted && bookingTestCompleted && (
+                    <Button 
+                      size="sm" 
+                      variant="primary" 
+                      className="mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate('/agreements')
+                      }}
+                    >
+                      View Offers
+                    </Button>
+                  )}
+                  {!bookingTestCompleted && (
+                    <p className="text-xs text-gray-500 mt-2">Complete step 2 first</p>
+                  )}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Endpoint Configuration Section */}
+      {showEndpointConfig && (
+        <div className="mt-6">
+          <EndpointConfiguration onConfigUpdated={handleEndpointConfigUpdated} />
+        </div>
+      )}
+
+      {/* Booking Test Section */}
+      {showBookingTest && (
+        <div className="mt-6">
+          <BookingTest onTestCompleted={handleBookingTestCompleted} />
+        </div>
       )}
     </div>
   )
