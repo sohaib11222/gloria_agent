@@ -1,29 +1,180 @@
 /**
  * SDK Client wrapper for frontend integration
  * Handles token management, error handling, and provides axios-like interface
+ * Uses HttpClient instead of external SDK
  */
 
-import { CarHireClient, SDKError, HttpClient } from '../../../sdk/typescript/src/index.js'
 import toast from 'react-hot-toast'
+import { HttpClient } from '../api/http'
 
 const API_BASE_URL = import.meta.env.VITE_MIDDLEWARE_URL || 'http://localhost:8080'
 
-// Create SDK client instance
-const sdkClient = new CarHireClient({
-  baseUrl: API_BASE_URL,
-  retry: {
-    enabled: true,
-    retries: 3,
-    baseMs: 300,
-    factor: 2,
-  },
-})
+// SDK Error class to match SDK interface
+export class SDKError extends Error {
+  constructor(
+    public message: string,
+    public status: number,
+    public code?: string,
+    public details?: any
+  ) {
+    super(message)
+    this.name = 'SDKError'
+  }
+}
 
-// Create a separate HTTP client for custom endpoints not in SDK
-// We'll access the SDK's internal HTTP client through a workaround
+// Create HTTP client instance
+const httpClient = new HttpClient(API_BASE_URL)
+
+// Token management
+let currentToken: string | null = null
+
+// SDK Client implementation
+class CarHireSDKClient {
+  private http: HttpClient
+
+  constructor() {
+    this.http = httpClient
+  }
+
+  setToken(token: string) {
+    currentToken = token
+    if (token) {
+      localStorage.setItem('token', token)
+    } else {
+      localStorage.removeItem('token')
+    }
+  }
+
+  getToken(): string | null {
+    return currentToken || localStorage.getItem('token')
+  }
+
+  // Auth methods
+  auth = {
+    login: async (email: string, password: string) => {
+      try {
+        const response = await this.http.post<{
+          access: string
+          refresh: string
+          user: any
+        }>('/auth/login', { email, password })
+        return response
+      } catch (error: any) {
+        throw new SDKError(
+          error.message || 'Login failed',
+          error.status || 500,
+          'LOGIN_ERROR',
+          error
+        )
+      }
+    },
+
+    register: async (data: {
+      companyName: string
+      type: string
+      email: string
+      password: string
+    }) => {
+      try {
+        const response = await this.http.post<{
+          access?: string
+          refresh?: string
+          user?: any
+          message?: string
+        }>('/auth/register', data)
+        return response
+      } catch (error: any) {
+        throw new SDKError(
+          error.message || 'Registration failed',
+          error.status || 500,
+          'REGISTER_ERROR',
+          error
+        )
+      }
+    },
+
+    verifyEmail: async (email: string, otp: string) => {
+      try {
+        const response = await this.http.post<{
+          access: string
+          refresh: string
+          user: any
+          message: string
+        }>('/auth/verify-email', { email, otp })
+        return response
+      } catch (error: any) {
+        throw new SDKError(
+          error.message || 'Email verification failed',
+          error.status || 500,
+          'VERIFY_EMAIL_ERROR',
+          error
+        )
+      }
+    },
+  }
+
+  // Agreements methods
+  agreements = {
+    list: async (params?: { status?: string }) => {
+      try {
+        const queryParams = params?.status ? `?status=${params.status}` : ''
+        const response = await this.http.get<{
+          items: Array<{
+            id: string
+            agentId: string
+            sourceId: string
+            agreementRef: string
+            status: string
+            validFrom: string
+            validTo: string
+          }>
+        }>(`/agreements${queryParams}`)
+        return response
+      } catch (error: any) {
+        throw new SDKError(
+          error.message || 'Failed to list agreements',
+          error.status || 500,
+          'LIST_AGREEMENTS_ERROR',
+          error
+        )
+      }
+    },
+
+    accept: async (agreementId: string) => {
+      try {
+        const response = await this.http.post<{
+          id: string
+          agentId: string
+          sourceId: string
+          agreementRef: string
+          status: string
+          validFrom: string
+          validTo: string
+        }>(`/agreements/${agreementId}/accept`)
+        return response
+      } catch (error: any) {
+        throw new SDKError(
+          error.message || 'Failed to accept agreement',
+          error.status || 500,
+          'ACCEPT_AGREEMENT_ERROR',
+          error
+        )
+      }
+    },
+  }
+
+  // Get HTTP client for custom requests
+  getHttpClient(): HttpClient {
+    return this.http
+  }
+}
+
+// Create SDK client instance
+const sdkClient = new CarHireSDKClient()
+
+// Create a helper to get HTTP client
 const createHttpClient = () => {
-  // Access the private http property (TypeScript allows this at runtime)
-  return (sdkClient as any).http as HttpClient
+  return sdkClient.getHttpClient()
 }
 
 // Initialize token from localStorage if available
@@ -73,17 +224,13 @@ export const api = {
       // Extract query params from config
       const query = config?.params || {}
       
-      // Use SDK methods for known endpoints
-      if (url === '/auth/me') {
-        // Use HTTP client for custom endpoints
-        const http = createHttpClient()
-        const data = await http.get<T>(url, { query })
-        return { data }
-      }
-      
-      // For other endpoints, use SDK HTTP client
+      // For all endpoints, use SDK HTTP client
       const http = createHttpClient()
-      const data = await http.get<T>(url, { query })
+      // Build query string if query params exist
+      const queryString = Object.keys(query).length > 0
+        ? '?' + new URLSearchParams(query as Record<string, string>).toString()
+        : ''
+      const data = await http.get<T>(url + queryString)
       return { data }
     } catch (error) {
       handleError(error)
@@ -124,8 +271,7 @@ export const api = {
       
       // For other endpoints, use SDK HTTP client
       const http = createHttpClient()
-      const headers = config?.headers || {}
-      const response = await http.post<T>(url, { body: data, headers })
+      const response = await http.post<T>(url, data)
       return { data: response }
     } catch (error) {
       handleError(error)
@@ -135,8 +281,7 @@ export const api = {
   put: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => {
     try {
       const http = createHttpClient()
-      const headers = config?.headers || {}
-      const response = await http.put<T>(url, { body: data, headers })
+      const response = await http.put<T>(url, data)
       return { data: response }
     } catch (error) {
       handleError(error)
@@ -146,8 +291,7 @@ export const api = {
   patch: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => {
     try {
       const http = createHttpClient()
-      const headers = config?.headers || {}
-      const response = await http.patch<T>(url, { body: data, headers })
+      const response = await http.patch<T>(url, data)
       return { data: response }
     } catch (error) {
       handleError(error)

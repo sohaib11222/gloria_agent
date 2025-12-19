@@ -27,19 +27,47 @@ export class HttpClient {
     const { baseURL, ...fetchOptions } = options
     const url = `${baseURL || this.baseURL}${endpoint}`
     
+    // Get token from localStorage for auth
+    const token = localStorage.getItem('token')
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...fetchOptions.headers,
+    }
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    
     try {
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...fetchOptions.headers,
-        },
+        headers,
         ...fetchOptions,
       })
 
       if (!response.ok) {
+        // Handle 401 Unauthorized - redirect to login
+        if (response.status === 401) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          localStorage.removeItem('refreshToken')
+          window.location.href = '/login'
+        }
+        
         const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as HttpError
         error.status = response.status
         error.statusText = response.statusText
+        
+        // Try to parse error response
+        try {
+          const errorData = await response.json()
+          if (errorData.message) {
+            error.message = errorData.message
+          }
+          (error as any).response = errorData
+        } catch {
+          // Ignore JSON parse errors
+        }
+        
         throw error
       }
 
@@ -77,6 +105,14 @@ export class HttpClient {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
+  async patch<T = any>(endpoint: string, data?: any, options?: HttpOptions): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     })
   }
