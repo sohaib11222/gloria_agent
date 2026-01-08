@@ -82,6 +82,14 @@ export class HttpClient {
     })
   }
 
+  async patch(endpoint, data, options) {
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
   async delete(endpoint, options) {
     return this.request(endpoint, { ...options, method: 'DELETE' })
   }

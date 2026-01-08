@@ -22,11 +22,20 @@ export class SDKError extends Error {
   }
 }
 
-// Create HTTP client instance
-const httpClient = new HttpClient(API_BASE_URL)
-
 // Token management
 let currentToken: string | null = null
+
+// Initialize token from localStorage if available
+const initializeToken = () => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    currentToken = token
+  }
+}
+initializeToken()
+
+// Create HTTP client instance with token getter
+const httpClient = new HttpClient(API_BASE_URL)
 
 // SDK Client implementation
 class CarHireSDKClient {
@@ -42,11 +51,17 @@ class CarHireSDKClient {
       localStorage.setItem('token', token)
     } else {
       localStorage.removeItem('token')
+      currentToken = null
     }
   }
 
   getToken(): string | null {
-    return currentToken || localStorage.getItem('token')
+    // Always check localStorage first in case token was updated elsewhere
+    const storedToken = localStorage.getItem('token')
+    if (storedToken && storedToken !== currentToken) {
+      currentToken = storedToken
+    }
+    return currentToken || storedToken
   }
 
   // Auth methods
@@ -174,30 +189,47 @@ const sdkClient = new CarHireSDKClient()
 
 // Create a helper to get HTTP client
 const createHttpClient = () => {
+  // Ensure token is synced before making requests
+  const token = sdkClient.getToken()
+  if (token && currentToken !== token) {
+    currentToken = token
+  }
   return sdkClient.getHttpClient()
-}
-
-// Initialize token from localStorage if available
-const token = localStorage.getItem('token')
-if (token) {
-  sdkClient.setToken(token)
 }
 
 // Helper to handle SDK errors and convert to axios-like format
 function handleError(error: unknown): never {
   if (error instanceof SDKError) {
-    // Handle 401 Unauthorized - redirect to login
-    if (error.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+    // Only redirect to login for actual authentication errors (401)
+    // Don't redirect for validation errors or other client errors
+    const basePath = import.meta.env.PROD ? '/agent' : ''
+    const loginPath = `${basePath}/login`
+    const currentPath = window.location.pathname
+    
+    if (error.status === 401 && 
+        error.code !== 'SCHEMA_ERROR' && 
+        error.code !== 'VALIDATION_ERROR' &&
+        !currentPath.endsWith('/login') && !currentPath.endsWith('/login/')) {
+      // Check if token still exists - if not, definitely redirect
+      const token = localStorage.getItem('token')
+      if (!token || error.code === 'AUTH_ERROR') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = loginPath
+        return // Don't show toast or throw if redirecting
+      }
+      // If token exists but we got 401, might be expired - let component handle it
     }
     
-    const message = error.message || 'An error occurred'
-    toast.error(message)
+    // Don't show toast for errors that will be handled by the component
+    // Only show toast for unexpected errors
+    if (error.status !== 400 && error.status !== 401) {
+      const message = error.message || 'An error occurred'
+      toast.error(message)
+    }
     
     // Convert SDKError to axios-like error format
-    const axiosError = new Error(message) as any
+    const axiosError = new Error(error.message || 'An error occurred') as any
     axiosError.response = {
       status: error.status,
       statusText: error.code || 'Error',
@@ -211,9 +243,44 @@ function handleError(error: unknown): never {
     throw axiosError
   }
   
-  // Handle other errors
-  const message = error instanceof Error ? error.message : 'An error occurred'
-  toast.error(message)
+  // Handle other errors - check if it's an HttpError with status
+  if (error instanceof Error && 'status' in error) {
+    const httpError = error as any
+    const basePath = import.meta.env.PROD ? '/agent' : ''
+    const loginPath = `${basePath}/login`
+    const currentPath = window.location.pathname
+    
+    // Don't auto-redirect for booking test endpoints - let components handle the error
+    const isBookingTestError = httpError.response?.config?.url?.includes('/bookings/test/') ||
+                               httpError.message?.includes('/bookings/test/')
+    
+    // Only redirect on 401, and only if not already on login page, and not a booking test endpoint
+    if (httpError.status === 401 && 
+        !currentPath.endsWith('/login') && 
+        !currentPath.endsWith('/login/') &&
+        !isBookingTestError) {
+      const currentToken = localStorage.getItem('token')
+      if (!currentToken || httpError.response?.data?.error === 'AUTH_ERROR') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('refreshToken')
+        window.location.href = loginPath
+        return
+      }
+      // If token exists, don't redirect - let the component handle the error
+    }
+    
+    // Don't show toast for client errors (400-499) - let components handle them
+    if (httpError.status < 400 || httpError.status >= 500) {
+      const message = httpError.message || 'An error occurred'
+      toast.error(message)
+    }
+  } else {
+    // For unknown errors, show toast
+    const message = error instanceof Error ? error.message : 'An error occurred'
+    toast.error(message)
+  }
+  
   throw error
 }
 
@@ -269,9 +336,11 @@ export const api = {
         return { data: { message: 'Logged out' } as T }
       }
       
-      // For other endpoints, use SDK HTTP client
+      // For other endpoints, use SDK HTTP client with config (headers, etc.)
+      // Note: We don't check token here - let the HTTP client handle it
+      // This allows the HTTP client to add the token from localStorage even if SDK client's token is stale
       const http = createHttpClient()
-      const response = await http.post<T>(url, data)
+      const response = await http.post<T>(url, data, config)
       return { data: response }
     } catch (error) {
       handleError(error)
@@ -290,8 +359,10 @@ export const api = {
 
   patch: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => {
     try {
+      // Note: We don't check token here - let the HTTP client handle it
+      // This allows the HTTP client to add the token from localStorage even if SDK client's token is stale
       const http = createHttpClient()
-      const response = await http.patch<T>(url, data)
+      const response = await http.patch<T>(url, data, config)
       return { data: response }
     } catch (error) {
       handleError(error)

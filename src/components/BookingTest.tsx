@@ -32,16 +32,95 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
       return
     }
 
+    // Check if user is authenticated before making request
+    const token = localStorage.getItem('token')
+    if (!token) {
+      toast.error('You must be logged in to run the booking test. Please log in and try again.', {
+        duration: 5000
+      })
+      return
+    }
+
     setIsLoading(true)
     try {
+      // Double-check token before making request
+      const currentToken = localStorage.getItem('token')
+      if (!currentToken) {
+        toast.error('You must be logged in to run the booking test. Please log in and try again.', {
+          duration: 5000
+        })
+        setIsLoading(false)
+        return
+      }
+      
+      console.log('[BookingTest] Creating booking with token present:', !!currentToken)
       const response = await bookingTestApi.createBooking(bookingData)
       setTestResults(response)
       setCurrentStep('modify')
       toast.success('Booking created successfully!')
       window.dispatchEvent(new Event('booking:updated'))
     } catch (error: any) {
-      console.error('Failed to create booking:', error)
-      toast.error(error.response?.data?.message || error.message || 'Failed to create booking')
+      console.error('[BookingTest] Failed to create booking:', error)
+      console.error('[BookingTest] Error details:', {
+        status: error.response?.status,
+        statusText: error.status,
+        message: error.message,
+        response: error.response
+      })
+      
+      // Extract error details
+      const errorData = error.response?.data || error.response || {}
+      const errorCode = errorData.error
+      const errorMessage = errorData.message || error.message || 'Failed to create booking'
+      const errorDetails = errorData.details
+      const errorHint = errorData.hint
+      const errorExample = errorData.example
+      
+      // Handle authentication errors specifically - but DON'T clear token or redirect
+      if (error.response?.status === 401 || errorCode === 'AUTH_ERROR') {
+        // Check if token still exists
+        const tokenAfterError = localStorage.getItem('token')
+        if (!tokenAfterError) {
+          toast.error('Your session has expired. Please log in again.', {
+            duration: 5000
+          })
+          // Only navigate to login if token was actually cleared
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 2000)
+        } else {
+          toast.error('Authentication failed. Please check your credentials and try again.', {
+            duration: 5000
+          })
+        }
+        setIsLoading(false)
+        return
+      }
+      
+      // Show user-friendly error messages
+      if (errorCode === 'SCHEMA_ERROR' && errorMessage.includes('Idempotency-Key')) {
+        toast.error('Missing Idempotency-Key header. This is required for booking operations.', {
+          duration: 5000
+        })
+        console.error('Error details:', {
+          message: errorMessage,
+          details: errorDetails,
+          hint: errorHint,
+          example: errorExample
+        })
+      } else if (error.response?.status === 400) {
+        toast.error(errorMessage || 'Invalid request. Please check your input and try again.', {
+          duration: 5000
+        })
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again later or contact support.', {
+          duration: 5000
+        })
+      } else {
+        toast.error(errorMessage || 'Failed to create booking. Please try again.', {
+          duration: 5000
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +138,28 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
       window.dispatchEvent(new Event('booking:updated'))
     } catch (error: any) {
       console.error('Failed to modify booking:', error)
-      toast.error(error.response?.data?.message || error.message || 'Failed to modify booking')
+      
+      const errorData = error.response?.data || error.response || {}
+      const errorCode = errorData.error
+      const errorMessage = errorData.message || error.message || 'Failed to modify booking'
+      
+      if (errorCode === 'SCHEMA_ERROR' && errorMessage.includes('Idempotency-Key')) {
+        toast.error('Missing Idempotency-Key header. This is required for booking operations.', {
+          duration: 5000
+        })
+      } else if (error.response?.status === 400) {
+        toast.error(errorMessage || 'Invalid request. Please check your input and try again.', {
+          duration: 5000
+        })
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again later or contact support.', {
+          duration: 5000
+        })
+      } else {
+        toast.error(errorMessage || 'Failed to modify booking. Please try again.', {
+          duration: 5000
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -83,7 +183,28 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
       }
     } catch (error: any) {
       console.error('Failed to cancel booking:', error)
-      toast.error(error.response?.data?.message || error.message || 'Failed to cancel booking')
+      
+      const errorData = error.response?.data || error.response || {}
+      const errorCode = errorData.error
+      const errorMessage = errorData.message || error.message || 'Failed to cancel booking'
+      
+      if (errorCode === 'SCHEMA_ERROR' && errorMessage.includes('Idempotency-Key')) {
+        toast.error('Missing Idempotency-Key header. This is required for booking operations.', {
+          duration: 5000
+        })
+      } else if (error.response?.status === 400) {
+        toast.error(errorMessage || 'Invalid request. Please check your input and try again.', {
+          duration: 5000
+        })
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again later or contact support.', {
+          duration: 5000
+        })
+      } else {
+        toast.error(errorMessage || 'Failed to cancel booking. Please try again.', {
+          duration: 5000
+        })
+      }
     } finally {
       setIsLoading(false)
     }
