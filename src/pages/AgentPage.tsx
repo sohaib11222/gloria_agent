@@ -10,6 +10,20 @@ import { Badge } from '../components/ui/Badge'
 import toast from 'react-hot-toast'
 import { agreementsOffersApi } from '../api/agreementsOffers'
 import { endpointsApi } from '../api/endpoints'
+import { 
+  LayoutDashboard, 
+  FileText, 
+  CheckCircle2, 
+  Clock, 
+  Building2, 
+  Bell, 
+  ArrowRight, 
+  Settings, 
+  PlayCircle, 
+  Handshake,
+  Shield,
+  Zap
+} from 'lucide-react'
 
 export default function AgentPage() {
   const navigate = useNavigate()
@@ -92,123 +106,201 @@ export default function AgentPage() {
 
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-2 text-gray-600">Welcome to your agent portal</p>
+    <div className="space-y-8 animate-fade-in pb-8">
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 rounded-2xl p-8 md:p-10 text-white shadow-2xl border border-indigo-400/20">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-500/20 rounded-full blur-2xl -ml-36 -mb-36"></div>
+        <div className="relative flex items-center justify-between flex-wrap gap-6">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 shadow-lg">
+              <LayoutDashboard className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
+              <p className="text-blue-100 text-lg md:text-xl">Welcome to your agent portal</p>
+            </div>
+          </div>
+          {user?.company?.companyName && (
+            <div className="flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <Building2 className="w-5 h-5" />
+              <div>
+                <p className="text-xs text-blue-200 font-medium">Company</p>
+                <p className="text-sm font-bold">{user.company.companyName}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* New agreements banner */}
+      {/* New agreements banner - Enhanced */}
       {pendingOffers > 0 && (
-        <Card className="bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-500 rounded-lg">
-                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
+        <Card className="bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 border-2 border-orange-300 shadow-xl transform transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg animate-pulse">
+                  <Bell className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">
-                    You have {pendingOffers} agreement{pendingOffers > 1 ? 's' : ''} to review
+                  <p className="font-bold text-gray-900 text-lg">
+                    {pendingOffers} New Agreement{pendingOffers > 1 ? 's' : ''} Awaiting Review
                   </p>
-                  <p className="text-sm text-gray-600">Source partners are waiting for your response</p>
+                  <p className="text-sm text-gray-700 mt-1">Source partners are waiting for your response</p>
                 </div>
               </div>
-              <Button variant="primary" onClick={() => navigate('/agreements')}>
+              <Button 
+                variant="primary" 
+                size="lg"
+                onClick={() => navigate('/agreements')}
+                className="flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+              >
                 Review Now
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Quick stats */}
+      {/* Enhanced Quick stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-blue-100 rounded-xl">
-              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Agreements</p>
-              <p className="text-2xl font-bold text-gray-900">{allAgreements.length}</p>
-              {pendingOffers > 0 && (
-                <p className="text-sm text-red-600 font-semibold">
-                  {pendingOffers} pending
+        <Card className="bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-50 border-2 border-blue-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-blue-300/40 transition-all"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Total Agreements</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                  {allAgreements.length}
                 </p>
-              )}
+                {pendingOffers > 0 && (
+                  <Badge variant="danger" className="mt-2 animate-pulse shadow-md">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {pendingOffers} pending
+                  </Badge>
+                )}
+                {pendingOffers === 0 && allAgreements.length > 0 && (
+                  <Badge variant="success" className="mt-2">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    All reviewed
+                  </Badge>
+                )}
+              </div>
+              <div className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl transform group-hover:scale-110 transition-transform">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-green-100 rounded-xl">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Status</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {bookingTestCompleted && agreementAccepted ? 'Ready' : 'Setup'}
-              </p>
-              {(!bookingTestCompleted || !agreementAccepted) && (
-                <p className="text-sm text-orange-600 font-semibold">
-                  Incomplete
+        <Card className="bg-gradient-to-br from-green-50 via-emerald-100 to-teal-50 border-2 border-green-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-green-300/40 transition-all"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">System Status</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                  {bookingTestCompleted && agreementAccepted ? 'Ready' : 'Setup'}
                 </p>
-              )}
+                {bookingTestCompleted && agreementAccepted ? (
+                  <Badge variant="success" className="mt-2">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Fully configured
+                  </Badge>
+                ) : (
+                  <Badge variant="warning" className="mt-2">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Incomplete
+                  </Badge>
+                )}
+              </div>
+              <div className={`p-4 rounded-2xl shadow-xl transform group-hover:scale-110 transition-transform ${
+                bookingTestCompleted && agreementAccepted 
+                  ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+                  : 'bg-gradient-to-br from-orange-500 to-amber-600'
+              }`}>
+                {bookingTestCompleted && agreementAccepted ? (
+                  <CheckCircle2 className="h-8 w-8 text-white" />
+                ) : (
+                  <Settings className="h-8 w-8 text-white" />
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-purple-100 rounded-xl">
-              <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+        <Card className="bg-gradient-to-br from-purple-50 via-indigo-100 to-pink-50 border-2 border-purple-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-200/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-purple-300/40 transition-all"></div>
+          <CardContent className="p-6 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Company</p>
+                <p className="text-lg font-bold text-gray-900 truncate mb-2">{user?.company?.companyName || '—'}</p>
+                <Badge 
+                  variant={user?.company?.status === 'ACTIVE' ? 'success' : 'warning'} 
+                  size="sm" 
+                  className="mt-2"
+                >
+                  {user?.company?.status || 'UNKNOWN'}
+                </Badge>
+              </div>
+              <div className="p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl transform group-hover:scale-110 transition-transform">
+                <Building2 className="h-8 w-8 text-white" />
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Company</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{user?.company?.companyName || '—'}</p>
-              <Badge variant={user?.company?.status === 'ACTIVE' ? 'success' : 'warning'} size="sm" className="mt-1">
-                {user?.company?.status || 'UNKNOWN'}
-              </Badge>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Source health status strip */}
-      <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="text-sm font-semibold text-green-900">All sources healthy</span>
+      {/* Enhanced Source health status strip */}
+      <Card className="bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 shadow-lg">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-md">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-green-900">All Sources Healthy</p>
+                <p className="text-xs text-green-700">System operational and ready</p>
+              </div>
             </div>
-            <span className="text-xs text-green-700">System operational</span>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-lg border border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-semibold text-green-800">Live</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Onboarding steps */}
+      {/* Enhanced Onboarding steps */}
       {(!httpConfigured || !grpcConfigured || !bookingTestCompleted || !agreementAccepted) && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900">Complete Your Setup</CardTitle>
+        <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <CardHeader className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+            <div className="relative flex items-center gap-3">
+              <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Zap className="w-6 h-6" />
+              </div>
+              <div>
+                <CardTitle className="text-white text-2xl font-bold">Complete Your Setup</CardTitle>
+                <p className="text-blue-100 text-sm mt-1">Follow these steps to get started with your agent portal</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6 md:p-8 relative">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Step 1 */}
               <div 
-                className={`flex items-start space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${!httpConfigured || !grpcConfigured ? 'bg-white hover:bg-blue-50' : ''}`}
+                className={`group flex flex-col items-start p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
+                  !httpConfigured || !grpcConfigured 
+                    ? 'bg-white hover:bg-blue-50 shadow-lg hover:shadow-2xl border-2 border-blue-300 transform hover:-translate-y-1' 
+                    : 'bg-gray-50 border-2 border-gray-200'
+                }`}
                 onClick={() => {
                   if (!httpConfigured || !grpcConfigured) {
                     setShowEndpointConfig(true)
@@ -216,30 +308,49 @@ export default function AgentPage() {
                   }
                 }}
               >
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${httpConfigured && grpcConfigured ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {httpConfigured && grpcConfigured ? '✓' : '1'}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">Configure Endpoints</h4>
-                  <p className="text-sm text-gray-600 mt-1">Set up your HTTP and gRPC endpoints</p>
-                  {(!httpConfigured || !grpcConfigured) && (
-                    <Button 
-                      size="sm" 
-                      variant="primary" 
-                      className="mt-2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowEndpointConfig(true)
-                        setShowBookingTest(false)
-                      }}
-                    >
-                      Configure Now
-                    </Button>
-                  )}
+                <div className="flex items-start gap-4 w-full">
+                  <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg transition-all ${
+                    httpConfigured && grpcConfigured 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                      : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white group-hover:scale-110'
+                  }`}>
+                    {httpConfigured && grpcConfigured ? <CheckCircle2 className="w-7 h-7" /> : '1'}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 text-lg mb-1">Configure Endpoints</h4>
+                    <p className="text-sm text-gray-600 mb-4">Set up your HTTP and gRPC endpoints</p>
+                    {(!httpConfigured || !grpcConfigured) && (
+                      <Button 
+                        size="sm" 
+                        variant="primary" 
+                        className="shadow-md hover:shadow-lg transform hover:scale-105"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowEndpointConfig(true)
+                          setShowBookingTest(false)
+                        }}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Configure Now
+                      </Button>
+                    )}
+                    {httpConfigured && grpcConfigured && (
+                      <Badge variant="success" className="mt-2">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Completed
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Step 2 */}
               <div 
-                className={`flex items-start space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${!bookingTestCompleted && httpConfigured && grpcConfigured ? 'bg-white hover:bg-blue-50' : ''}`}
+                className={`group flex flex-col items-start p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
+                  !bookingTestCompleted && httpConfigured && grpcConfigured 
+                    ? 'bg-white hover:bg-blue-50 shadow-lg hover:shadow-2xl border-2 border-blue-300 transform hover:-translate-y-1' 
+                    : 'bg-gray-50 border-2 border-gray-200'
+                }`}
                 onClick={() => {
                   if (!bookingTestCompleted && httpConfigured && grpcConfigured) {
                     setShowBookingTest(true)
@@ -247,61 +358,97 @@ export default function AgentPage() {
                   }
                 }}
               >
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${bookingTestCompleted ? 'bg-green-500 text-white' : httpConfigured && grpcConfigured ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {bookingTestCompleted ? '✓' : '2'}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">Run Booking Test</h4>
-                  <p className="text-sm text-gray-600 mt-1">Complete the booking integration test</p>
-                  {!bookingTestCompleted && httpConfigured && grpcConfigured && (
-                    <Button 
-                      size="sm" 
-                      variant="primary" 
-                      className="mt-2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowBookingTest(true)
-                        setShowEndpointConfig(false)
-                      }}
-                    >
-                      Run Test
-                    </Button>
-                  )}
-                  {(!httpConfigured || !grpcConfigured) && (
-                    <p className="text-xs text-gray-500 mt-2">Complete step 1 first</p>
-                  )}
+                <div className="flex items-start gap-4 w-full">
+                  <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg transition-all ${
+                    bookingTestCompleted 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                      : httpConfigured && grpcConfigured 
+                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white group-hover:scale-110' 
+                      : 'bg-gray-300 text-gray-600'
+                  }`}>
+                    {bookingTestCompleted ? <CheckCircle2 className="w-7 h-7" /> : '2'}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 text-lg mb-1">Run Booking Test</h4>
+                    <p className="text-sm text-gray-600 mb-4">Complete the booking integration test</p>
+                    {!bookingTestCompleted && httpConfigured && grpcConfigured && (
+                      <Button 
+                        size="sm" 
+                        variant="primary" 
+                        className="shadow-md hover:shadow-lg transform hover:scale-105"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowBookingTest(true)
+                          setShowEndpointConfig(false)
+                        }}
+                      >
+                        <PlayCircle className="w-4 h-4 mr-2" />
+                        Run Test
+                      </Button>
+                    )}
+                    {(!httpConfigured || !grpcConfigured) && (
+                      <p className="text-xs text-gray-500 mt-2 font-medium">Complete step 1 first</p>
+                    )}
+                    {bookingTestCompleted && (
+                      <Badge variant="success" className="mt-2">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Completed
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Step 3 */}
               <div 
-                className={`flex items-start space-x-4 p-4 rounded-lg cursor-pointer transition-colors ${!agreementAccepted && bookingTestCompleted ? 'bg-white hover:bg-blue-50' : ''}`}
+                className={`group flex flex-col items-start p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
+                  !agreementAccepted && bookingTestCompleted 
+                    ? 'bg-white hover:bg-blue-50 shadow-lg hover:shadow-2xl border-2 border-blue-300 transform hover:-translate-y-1' 
+                    : 'bg-gray-50 border-2 border-gray-200'
+                }`}
                 onClick={() => {
                   if (!agreementAccepted && bookingTestCompleted) {
                     navigate('/agreements')
                   }
                 }}
               >
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${agreementAccepted ? 'bg-green-500 text-white' : bookingTestCompleted ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {agreementAccepted ? '✓' : '3'}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">Accept Agreement</h4>
-                  <p className="text-sm text-gray-600 mt-1">Activate your agreement offers</p>
-                  {!agreementAccepted && bookingTestCompleted && (
-                    <Button 
-                      size="sm" 
-                      variant="primary" 
-                      className="mt-2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate('/agreements')
-                      }}
-                    >
-                      View Offers
-                    </Button>
-                  )}
-                  {!bookingTestCompleted && (
-                    <p className="text-xs text-gray-500 mt-2">Complete step 2 first</p>
-                  )}
+                <div className="flex items-start gap-4 w-full">
+                  <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg transition-all ${
+                    agreementAccepted 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                      : bookingTestCompleted 
+                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white group-hover:scale-110' 
+                      : 'bg-gray-300 text-gray-600'
+                  }`}>
+                    {agreementAccepted ? <CheckCircle2 className="w-7 h-7" /> : '3'}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 text-lg mb-1">Accept Agreement</h4>
+                    <p className="text-sm text-gray-600 mb-4">Activate your agreement offers</p>
+                    {!agreementAccepted && bookingTestCompleted && (
+                      <Button 
+                        size="sm" 
+                        variant="primary" 
+                        className="shadow-md hover:shadow-lg transform hover:scale-105"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate('/agreements')
+                        }}
+                      >
+                        <Handshake className="w-4 h-4 mr-2" />
+                        View Offers
+                      </Button>
+                    )}
+                    {!bookingTestCompleted && (
+                      <p className="text-xs text-gray-500 mt-2 font-medium">Complete step 2 first</p>
+                    )}
+                    {agreementAccepted && (
+                      <Badge variant="success" className="mt-2">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Completed
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

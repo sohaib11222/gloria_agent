@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import SdkGuide from '../components/docs/SdkGuide';
 import GettingStartedGuide from '../components/docs/GettingStartedGuide';
+import { ErrorDisplay } from '../components/ui/ErrorDisplay';
+import { Loader } from '../components/ui/Loader';
 import './DocsFullscreen.css';
 
 type DocCodeSample = {
@@ -47,27 +49,34 @@ const DocsFullscreen: React.FC = () => {
   const [activeCode, setActiveCode] = useState<string>('curl');
   const [showSdkGuide, setShowSdkGuide] = useState<boolean>(view === 'sdk');
   const [showGettingStarted, setShowGettingStarted] = useState<boolean>(view === 'getting-started');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    setIsLoading(true);
+    setError(null);
     api.get('/docs/agent').then((res) => {
-      setCategories(res.data);
+      setCategories(res.data || []);
       if (endpointId) {
         const endpoint = res.data
-          .flatMap(cat => cat.endpoints)
+          ?.flatMap(cat => cat.endpoints || [])
           .find(ep => ep.id === endpointId);
         if (endpoint) {
           setSelectedEndpoint(endpoint);
           setActiveCode(endpoint.codeSamples?.[0]?.lang ?? 'curl');
         }
       } else if (!view) {
-        const firstCat = res.data[0];
+        const firstCat = res.data?.[0];
         if (firstCat && firstCat.endpoints && firstCat.endpoints[0]) {
           setSelectedEndpoint(firstCat.endpoints[0]);
           setActiveCode(firstCat.endpoints[0].codeSamples?.[0]?.lang ?? 'curl');
         }
       }
+      setIsLoading(false);
     }).catch((err) => {
       console.error('Failed to load docs:', err);
+      setError(err);
+      setIsLoading(false);
     });
   }, [endpointId, view]);
 
@@ -132,7 +141,18 @@ const DocsFullscreen: React.FC = () => {
       </header>
 
       <main className="docs-fullscreen-main">
-        {showGettingStarted ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader />
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full p-8">
+            <ErrorDisplay
+              error={error}
+              title="Failed to load API documentation"
+            />
+          </div>
+        ) : showGettingStarted ? (
           <GettingStartedGuide />
         ) : showSdkGuide ? (
           <SdkGuide role="agent" />

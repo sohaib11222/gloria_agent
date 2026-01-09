@@ -14,6 +14,7 @@ import MyBookings from '../pages/MyBookings'
 import LocationBrowser from '../pages/LocationBrowser'
 import DocsPage from '../pages/Docs'
 import DocsFullscreen from '../pages/DocsFullscreen'
+import NotFound from '../pages/NotFound'
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -38,11 +39,12 @@ export const AppRoutes: React.FC = () => {
         <Route path="locations" element={<LocationBrowser />} />
         <Route path="docs" element={<DocsPage />} />
         <Route index element={<Navigate to="/agent" replace />} />
+        {/* 404 for protected routes - will show with Shell layout */}
+        <Route path="*" element={<NotFound />} />
       </Route>
 
-      {/* Default redirects */}
-      
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* 404 Page */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

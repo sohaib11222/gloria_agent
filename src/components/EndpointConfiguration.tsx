@@ -90,23 +90,23 @@ export const EndpointConfiguration: React.FC<EndpointConfigurationProps> = ({ on
   }, [])
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
+    <Card className="mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
+      <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-xl">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Endpoint Configuration</CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
+            <CardTitle className="text-white">Endpoint Configuration</CardTitle>
+            <p className="text-indigo-100 text-sm mt-1">
               Manage your HTTP and gRPC endpoints
             </p>
           </div>
           {!isEditingEndpoints && (
-            <Button onClick={handleEditEndpoints} variant="secondary" size="sm">
+            <Button onClick={handleEditEndpoints} variant="secondary" size="sm" className="bg-white text-indigo-600 hover:bg-indigo-50">
               Edit Endpoints
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {isLoadingEndpoints ? (
           <div className="flex justify-center py-8">
             <Loader />
@@ -150,35 +150,39 @@ export const EndpointConfiguration: React.FC<EndpointConfigurationProps> = ({ on
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">HTTP Endpoint</label>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm text-gray-900 font-mono">{endpointConfig.httpEndpoint}</p>
+                  <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">HTTP Endpoint</label>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <p className="text-sm text-gray-900 font-mono font-semibold flex-1">{endpointConfig.httpEndpoint}</p>
                       <Copy text={endpointConfig.httpEndpoint} />
                     </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">gRPC Endpoint</label>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm text-gray-900 font-mono">{endpointConfig.grpcEndpoint}</p>
+                  <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">gRPC Endpoint</label>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <p className="text-sm text-gray-900 font-mono font-semibold flex-1">{endpointConfig.grpcEndpoint}</p>
                       <Copy text={endpointConfig.grpcEndpoint} />
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Adapter Type</label>
-                    <Badge variant="info">{endpointConfig.adapterType}</Badge>
+                  <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Adapter Type</label>
+                    <div className="mt-2">
+                      <Badge variant="info" className="font-semibold">{endpointConfig.adapterType}</Badge>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Status</label>
-                    <Badge variant={endpointConfig.status === 'ACTIVE' ? 'success' : 'warning'}>
-                      {endpointConfig.status}
-                    </Badge>
+                  <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>
+                    <div className="mt-2">
+                      <Badge variant={endpointConfig.status === 'ACTIVE' ? 'success' : 'warning'} className="font-semibold">
+                        {endpointConfig.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Last Updated</label>
-                    <p className="text-sm text-gray-900">
+                  <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Last Updated</label>
+                    <p className="text-sm text-gray-900 font-medium mt-2">
                       {new Date(endpointConfig.updatedAt).toLocaleString()}
                     </p>
                   </div>

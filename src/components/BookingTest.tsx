@@ -225,33 +225,51 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
   }
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle>Booking Test</CardTitle>
-        <p className="text-sm text-gray-600">
+    <Card className="mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+      <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-xl">
+        <CardTitle className="text-white">Booking Test</CardTitle>
+        <p className="text-purple-100 text-sm mt-1">
           Test booking creation, modification, and cancellation
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {allTestsPassed ? (
-          <div className="text-center py-8">
-            <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
-              <div className="text-green-800">
-                <h4 className="font-medium text-lg mb-2">🎉 All Tests Passed!</h4>
-                <p className="text-sm">
+          <div className="text-center py-12">
+            <div className="p-8 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl shadow-xl">
+              <div className="mb-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                  <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="text-green-900">
+                <h4 className="font-bold text-2xl mb-3">🎉 All Tests Passed!</h4>
+                <p className="text-base font-medium mb-4">
                   You have successfully completed all booking integration tests:
                 </p>
-                <ul className="text-sm mt-2 space-y-1">
-                  <li>✅ Create Booking</li>
-                  <li>✅ Modify Booking</li>
-                  <li>✅ Cancel Booking</li>
-                </ul>
-                <p className="text-xs mt-3 text-green-600">
+                <div className="bg-white rounded-xl p-4 mb-4 shadow-md">
+                  <ul className="text-sm space-y-2 text-left">
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-600 font-bold">✅</span>
+                      <span className="font-semibold">Create Booking</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-600 font-bold">✅</span>
+                      <span className="font-semibold">Modify Booking</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-green-600 font-bold">✅</span>
+                      <span className="font-semibold">Cancel Booking</span>
+                    </li>
+                  </ul>
+                </div>
+                <p className="text-sm font-semibold text-green-700">
                   Your booking integration is working correctly!
                 </p>
               </div>
             </div>
-            <Button onClick={resetTest} variant="secondary" className="mt-4">
+            <Button onClick={resetTest} variant="secondary" className="mt-6 shadow-md" size="lg">
               Run Test Again
             </Button>
           </div>
@@ -259,8 +277,13 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
           <div className="space-y-6">
             {/* Test Form */}
             {currentStep === 'create' && (
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Step 1: Create Booking</h4>
+              <div className="space-y-6 bg-white p-6 rounded-xl border-2 border-purple-200 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                    1
+                  </div>
+                  <h4 className="font-bold text-xl text-gray-900">Step 1: Create Booking</h4>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input
                     label="Source ID"
@@ -284,7 +307,7 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
                 <Button
                   onClick={handleCreateBooking}
                   loading={isLoading}
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg"
                 >
                   Create Test Booking
                 </Button>
@@ -293,15 +316,22 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
 
             {/* Modify Step */}
             {currentStep === 'modify' && (
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Step 2: Modify Booking</h4>
-                <p className="text-sm text-gray-600">
-                  Booking created successfully. Now let's test the modify functionality.
-                </p>
+              <div className="space-y-6 bg-white p-6 rounded-xl border-2 border-purple-200 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                    2
+                  </div>
+                  <h4 className="font-bold text-xl text-gray-900">Step 2: Modify Booking</h4>
+                </div>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm font-medium text-green-800">
+                    ✅ Booking created successfully. Now let's test the modify functionality.
+                  </p>
+                </div>
                 <Button
                   onClick={handleModifyBooking}
                   loading={isLoading}
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg"
                 >
                   Modify Booking
                 </Button>
@@ -310,15 +340,22 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
 
             {/* Cancel Step */}
             {currentStep === 'cancel' && (
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Step 3: Cancel Booking</h4>
-                <p className="text-sm text-gray-600">
-                  Booking modified successfully. Now let's test the cancel functionality.
-                </p>
+              <div className="space-y-6 bg-white p-6 rounded-xl border-2 border-purple-200 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                    3
+                  </div>
+                  <h4 className="font-bold text-xl text-gray-900">Step 3: Cancel Booking</h4>
+                </div>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm font-medium text-green-800">
+                    ✅ Booking modified successfully. Now let's test the cancel functionality.
+                  </p>
+                </div>
                 <Button
                   onClick={handleCancelBooking}
                   loading={isLoading}
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg"
                 >
                   Cancel Booking
                 </Button>
@@ -327,8 +364,14 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
 
             {/* Test Results */}
             {testResults && (
-              <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <h5 className="font-medium text-gray-900 mb-3">Test Results</h5>
+              <Card className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                <CardContent className="p-6">
+                  <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Test Results
+                  </h5>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Booking ID:</span>
@@ -373,11 +416,12 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-sm text-blue-800">{testResults.message}</p>
+                  <div className="mt-4 p-4 bg-white border-2 border-blue-200 rounded-xl shadow-sm">
+                    <p className="text-sm font-semibold text-blue-900">{testResults.message}</p>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
             )}
           </div>
         )}

@@ -1,42 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Eye, Edit, X, XCircle, Filter } from 'lucide-react'
+import { Search, Eye, XCircle, Filter, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Loader } from '../components/ui/Loader'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { Modal } from '../components/ui/Modal'
+import { ErrorDisplay } from '../components/ui/ErrorDisplay'
 import { bookingsApi, Booking } from '../api/bookings'
 import { agreementsOffersApi } from '../api/agreementsOffers'
-import toast from 'react-hot-toast'
+import { showToast } from '../components/ui/ToastConfig'
 import { formatDate } from '../lib/utils'
-
-// Modal component (simple version)
-const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-}) => {
-  if (!isOpen) return null
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="fixed inset-0 bg-black opacity-30" onClick={onClose}></div>
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          {children}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function MyBookings() {
   const [statusFilter, setStatusFilter] = useState('')
@@ -57,9 +33,10 @@ export default function MyBookings() {
   const activeAgreements = (agreementsData?.items ?? []).filter((a: any) => a.status === 'ACCEPTED' || a.status === 'ACTIVE')
 
   // Load bookings
-  const { data: bookingsData, isLoading } = useQuery({
+  const { data: bookingsData, isLoading, error: bookingsError, refetch: refetchBookings } = useQuery({
     queryKey: ['bookings', statusFilter],
     queryFn: () => bookingsApi.listBookings({ limit: 100 }),
+    retry: 1,
   })
 
   const bookings = (bookingsData?.items ?? []) as any[]
@@ -79,14 +56,15 @@ export default function MyBookings() {
     mutationFn: ({ ref, agreementRef }: { ref: string; agreementRef: string }) =>
       bookingsApi.cancelBooking(ref, agreementRef),
     onSuccess: () => {
-      toast.success('Booking cancelled successfully')
+      showToast.success('Booking cancelled successfully')
       queryClient.invalidateQueries({ queryKey: ['bookings'] })
       setIsCancelModalOpen(false)
       setSelectedBooking(null)
       setAgreementRef('')
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to cancel booking')
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to cancel booking'
+      showToast.error(errorMessage)
     },
   })
 
@@ -106,18 +84,24 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-        <p className="mt-2 text-gray-600">Manage your bookings and view details</p>
+    <div className="space-y-6 animate-fade-in">
+      <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl p-8 text-white shadow-lg">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+            <Calendar className="w-8 h-8" />
+          </div>
+          <h1 className="text-4xl font-bold">My Bookings</h1>
+        </div>
+        <p className="text-amber-100 text-lg">Manage your bookings and view details</p>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+        <CardHeader className="bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-t-xl">
+          <CardTitle className="text-white">Filters</CardTitle>
+          <p className="text-amber-100 text-sm mt-1">Search and filter your bookings</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Input
@@ -145,37 +129,54 @@ export default function MyBookings() {
         </CardContent>
       </Card>
 
+      {/* Error Display */}
+      {bookingsError && (
+        <ErrorDisplay
+          error={bookingsError}
+          title="Failed to load bookings"
+          onDismiss={() => refetchBookings()}
+        />
+      )}
+
       {/* Bookings Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Bookings ({filteredBookings.length})</CardTitle>
+      <Card className="bg-gradient-to-br from-white to-gray-50 border-gray-200">
+        <CardHeader className="bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-t-xl">
+          <CardTitle className="text-white">Bookings ({filteredBookings.length})</CardTitle>
+          <p className="text-amber-100 text-sm mt-1">View and manage all your bookings</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader />
             </div>
+          ) : bookingsError ? (
+            <div className="text-center py-12">
+              <ErrorDisplay
+                error={bookingsError}
+                title="Unable to load bookings"
+              />
+            </div>
           ) : filteredBookings.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Booking ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Vehicle
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Locations
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -190,29 +191,34 @@ export default function MyBookings() {
                     const canCancel = status !== 'CANCELLED'
 
                     return (
-                      <tr key={b.id || idx} className="hover:bg-gray-50">
+                      <tr key={b.id || idx} className="hover:bg-amber-50 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-xs text-gray-900">{b.id || '—'}</code>
+                          <code className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-lg">{b.id || '—'}</code>
                           {b.supplierBookingRef && (
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs text-gray-500 mt-1 font-medium">
                               Supplier: {b.supplierBookingRef.slice(0, 12)}...
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{vehicle}</div>
+                          <div className="text-sm font-bold text-gray-900">{vehicle}</div>
                           {b.error && (
-                            <div className="text-xs text-red-600 mt-1">{b.error}</div>
+                            <div className="text-xs text-red-600 mt-1 font-medium bg-red-50 px-2 py-0.5 rounded inline-block">{b.error}</div>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          <div>{pickup}</div>
-                          <div className="text-xs">→ {dropoff}</div>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="font-semibold text-gray-900">{pickup}</div>
+                          <div className="text-xs text-gray-600 flex items-center gap-1 mt-1">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                            {dropoff}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(status)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
                           {created ? formatDate(created) : '—'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -224,6 +230,7 @@ export default function MyBookings() {
                                 setSelectedBooking(b as Booking)
                                 setIsDetailModalOpen(true)
                               }}
+                              className="hover:bg-blue-50 hover:text-blue-600"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -235,8 +242,9 @@ export default function MyBookings() {
                                   setSelectedBooking(b as Booking)
                                   setIsCancelModalOpen(true)
                                 }}
+                                className="hover:bg-red-50 hover:text-red-600"
                               >
-                                <XCircle className="w-4 h-4 text-red-600" />
+                                <XCircle className="w-4 h-4" />
                               </Button>
                             )}
                           </div>
@@ -248,12 +256,12 @@ export default function MyBookings() {
               </table>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No bookings found</h3>
-              <p className="mt-1 text-sm text-gray-500">
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-10 w-10 text-amber-600" />
+              </div>
+              <h3 className="mt-2 text-lg font-bold text-gray-900">No bookings found</h3>
+              <p className="mt-2 text-sm text-gray-600">
                 {searchQuery || statusFilter ? 'Try adjusting your filters' : 'Run availability search and create bookings from your website.'}
               </p>
             </div>
@@ -269,6 +277,7 @@ export default function MyBookings() {
           setSelectedBooking(null)
         }}
         title="Booking Details"
+        size="lg"
       >
         {selectedBooking && (
           <div className="space-y-4">
@@ -341,26 +350,9 @@ export default function MyBookings() {
           setAgreementRef('')
         }}
         title="Cancel Booking"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Are you sure you want to cancel booking <strong>{selectedBooking?.id}</strong>?
-          </p>
-          <div>
-            <Select
-              label="Agreement Reference *"
-              value={agreementRef}
-              onChange={(e) => setAgreementRef(e.target.value)}
-              options={[
-                { value: '', label: 'Select agreement' },
-                ...activeAgreements.map((a: any) => ({
-                  value: a.agreement_ref || a.agreementRef,
-                  label: `${a.agreement_ref || a.agreementRef} (${a.status})`,
-                })),
-              ]}
-            />
-          </div>
-          <div className="flex justify-end gap-3">
+        size="md"
+        footer={
+          <>
             <Button
               variant="secondary"
               onClick={() => {
@@ -379,6 +371,34 @@ export default function MyBookings() {
             >
               Cancel Booking
             </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to cancel booking <strong className="font-semibold">{selectedBooking?.id}</strong>?
+          </p>
+          {cancelMutation.isError && (
+            <ErrorDisplay
+              error={cancelMutation.error}
+              title="Cancellation failed"
+              variant="error"
+            />
+          )}
+          <div>
+            <Select
+              label="Agreement Reference *"
+              value={agreementRef}
+              onChange={(e) => setAgreementRef(e.target.value)}
+              error={!agreementRef && cancelMutation.isError ? 'Agreement reference is required' : undefined}
+              options={[
+                { value: '', label: 'Select agreement' },
+                ...activeAgreements.map((a: any) => ({
+                  value: a.agreement_ref || a.agreementRef,
+                  label: `${a.agreement_ref || a.agreementRef} (${a.status})`,
+                })),
+              ]}
+            />
           </div>
         </div>
       </Modal>

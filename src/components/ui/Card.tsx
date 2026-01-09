@@ -9,7 +9,7 @@ export const Card: React.FC<CardProps> = ({ className, children, ...props }) => 
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl shadow-sm border border-gray-200',
+        'bg-white rounded-xl shadow-sm border border-gray-200 transition-shadow hover:shadow-md',
         className
       )}
       {...props}
@@ -22,7 +22,7 @@ export const Card: React.FC<CardProps> = ({ className, children, ...props }) => 
 export const CardHeader: React.FC<CardProps> = ({ className, children, ...props }) => {
   return (
     <div
-      className={cn('px-6 py-4 border-b border-gray-200', className)}
+      className={cn('px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl', className)}
       {...props}
     >
       {children}

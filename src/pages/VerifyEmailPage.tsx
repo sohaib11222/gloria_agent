@@ -98,33 +98,46 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl p-4 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
+    <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      {/* Animated background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="max-w-md w-full space-y-8 relative z-10">
+        <div className="text-center animate-fade-in">
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
+              <div className="relative bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl p-4 shadow-2xl transform transition-transform hover:scale-105">
+                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-900">
+          <h2 className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
             Verify Your Email
           </h2>
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-base text-gray-600 font-medium">
             We've sent a verification code to
           </p>
-          <p className="mt-1 text-sm font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-lg inline-block">
+          <p className="mt-2 text-sm font-semibold text-green-700 bg-green-50 border border-green-200 px-4 py-2 rounded-lg inline-block shadow-sm">
             {email}
           </p>
         </div>
         
-        <Card className="shadow-2xl border-0">
-          <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
-            <CardTitle className="text-xl text-center">Enter Verification Code</CardTitle>
-            <p className="text-sm text-gray-600 mt-2 text-center">
-              Please check your email and enter the 4-digit code below
-            </p>
+        <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/90 transform transition-all duration-300 hover:shadow-3xl">
+          <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden rounded-t-xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600/5 to-emerald-600/5"></div>
+            <div className="relative">
+              <CardTitle className="text-2xl font-bold text-gray-900 text-center">Enter Verification Code</CardTitle>
+              <p className="text-sm text-gray-600 mt-2 text-center font-medium">
+                Please check your email and enter the 4-digit code below
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="pt-8">
             <div className="space-y-8">
@@ -210,11 +223,35 @@ export default function VerifyEmailPage() {
         </Card>
 
         <div className="text-center">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-500 font-medium tracking-wide">
             Car Hire – Agent Portal
           </p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out;
+        }
+      `}</style>
     </div>
   )
 }

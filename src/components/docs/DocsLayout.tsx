@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import SdkGuide from './SdkGuide';
 import GettingStartedGuide from './GettingStartedGuide';
+import { ErrorDisplay } from '../ui/ErrorDisplay';
+import { Loader } from '../ui/Loader';
 import './docs.css';
 
 type DocCodeSample = {
@@ -44,19 +46,49 @@ const DocsLayout: React.FC = () => {
   const [activeCode, setActiveCode] = useState<string>('curl');
   const [showSdkGuide, setShowSdkGuide] = useState<boolean>(false);
   const [showGettingStarted, setShowGettingStarted] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    setIsLoading(true);
+    setError(null);
     // agent gets agent-filtered docs
     api.get('/docs/agent').then((res) => {
-      setCategories(res.data);
-      const firstCat = res.data[0];
+      setCategories(res.data || []);
+      const firstCat = res.data?.[0];
       if (firstCat && firstCat.endpoints && firstCat.endpoints[0]) {
         setSelectedEndpoint(firstCat.endpoints[0]);
       }
+      setIsLoading(false);
     }).catch((err) => {
       console.error('Failed to load docs:', err);
+      setError(err);
+      setIsLoading(false);
     });
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="docs-shell">
+        <div className="flex items-center justify-center h-full">
+          <Loader />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="docs-shell">
+        <div className="flex items-center justify-center h-full p-8">
+          <ErrorDisplay
+            error={error}
+            title="Failed to load API documentation"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="docs-shell">
