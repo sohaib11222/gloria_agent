@@ -6,8 +6,7 @@
 
 import toast from 'react-hot-toast'
 import { HttpClient } from '../api/http'
-
-const API_BASE_URL = import.meta.env.VITE_MIDDLEWARE_URL || 'http://localhost:8080'
+import { API_BASE_URL } from './apiConfig'
 
 // SDK Error class to match SDK interface
 export class SDKError extends Error {

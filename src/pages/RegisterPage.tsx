@@ -172,7 +172,7 @@ export default function RegisterPage() {
 
         <div className="text-center">
           <p className="text-xs text-gray-500 font-medium tracking-wide">
-            Car Hire – Agent Portal
+            Gloria Connect – Agent Portal
           </p>
         </div>
       </div>
