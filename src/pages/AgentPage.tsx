@@ -106,56 +106,54 @@ export default function AgentPage() {
 
 
   return (
-    <div className="space-y-8 animate-fade-in pb-8">
-      {/* Enhanced Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-600 to-purple-600 rounded-2xl p-8 md:p-10 text-white shadow-2xl border border-indigo-400/20">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48"></div>
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-500/20 rounded-full blur-2xl -ml-36 -mb-36"></div>
-        <div className="relative flex items-center justify-between flex-wrap gap-6">
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="bg-white border border-gray-200 rounded-md p-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-4 bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 shadow-lg">
-              <LayoutDashboard className="w-8 h-8" />
+            <div className="p-3 bg-slate-700 rounded-md">
+              <LayoutDashboard className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-semibold text-gray-900 mb-1">
                 Dashboard
               </h1>
-              <p className="text-blue-100 text-lg md:text-xl">Welcome to your agent portal</p>
+              <p className="text-gray-600 text-sm">Welcome to your agent portal</p>
             </div>
           </div>
           {user?.company?.companyName && (
-            <div className="flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-              <Building2 className="w-5 h-5" />
+            <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-md border border-gray-200">
+              <Building2 className="w-5 h-5 text-gray-600" />
               <div>
-                <p className="text-xs text-blue-200 font-medium">Company</p>
-                <p className="text-sm font-bold">{user.company.companyName}</p>
+                <p className="text-xs text-gray-500 font-medium">Company</p>
+                <p className="text-sm font-semibold text-gray-900">{user.company.companyName}</p>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* New agreements banner - Enhanced */}
+      {/* New agreements banner */}
       {pendingOffers > 0 && (
-        <Card className="bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 border-2 border-orange-300 shadow-xl transform transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]">
-          <CardContent className="p-6">
+        <Card className="bg-yellow-50 border border-yellow-300">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg animate-pulse">
-                  <Bell className="h-6 w-6 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-600 rounded-md">
+                  <Bell className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-lg">
+                  <p className="font-semibold text-gray-900">
                     {pendingOffers} New Agreement{pendingOffers > 1 ? 's' : ''} Awaiting Review
                   </p>
-                  <p className="text-sm text-gray-700 mt-1">Source partners are waiting for your response</p>
+                  <p className="text-sm text-gray-600 mt-0.5">Source partners are waiting for your response</p>
                 </div>
               </div>
               <Button 
                 variant="primary" 
-                size="lg"
+                size="md"
                 onClick={() => navigate('/agreements')}
-                className="flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                className="flex items-center gap-2"
               >
                 Review Now
                 <ArrowRight className="w-4 h-4" />
@@ -165,141 +163,136 @@ export default function AgentPage() {
         </Card>
       )}
 
-      {/* Enhanced Quick stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-50 border-2 border-blue-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-blue-300/40 transition-all"></div>
-          <CardContent className="p-6 relative">
+      {/* Quick stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border border-gray-200">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Total Agreements</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">Total Agreements</p>
+                <p className="text-3xl font-semibold text-gray-900 mb-2">
                   {allAgreements.length}
                 </p>
                 {pendingOffers > 0 && (
-                  <Badge variant="danger" className="mt-2 animate-pulse shadow-md">
+                  <Badge variant="danger" className="mt-1">
                     <Clock className="w-3 h-3 mr-1" />
                     {pendingOffers} pending
                   </Badge>
                 )}
                 {pendingOffers === 0 && allAgreements.length > 0 && (
-                  <Badge variant="success" className="mt-2">
+                  <Badge variant="success" className="mt-1">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     All reviewed
                   </Badge>
                 )}
               </div>
-              <div className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl transform group-hover:scale-110 transition-transform">
-                <FileText className="h-8 w-8 text-white" />
+              <div className="p-3 bg-slate-700 rounded-md">
+                <FileText className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 via-emerald-100 to-teal-50 border-2 border-green-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-green-300/40 transition-all"></div>
-          <CardContent className="p-6 relative">
+        <Card className="border border-gray-200">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">System Status</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">System Status</p>
+                <p className="text-3xl font-semibold text-gray-900 mb-2">
                   {bookingTestCompleted && agreementAccepted ? 'Ready' : 'Setup'}
                 </p>
                 {bookingTestCompleted && agreementAccepted ? (
-                  <Badge variant="success" className="mt-2">
+                  <Badge variant="success" className="mt-1">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     Fully configured
                   </Badge>
                 ) : (
-                  <Badge variant="warning" className="mt-2">
+                  <Badge variant="warning" className="mt-1">
                     <Clock className="w-3 h-3 mr-1" />
                     Incomplete
                   </Badge>
                 )}
               </div>
-              <div className={`p-4 rounded-2xl shadow-xl transform group-hover:scale-110 transition-transform ${
+              <div className={`p-3 rounded-md ${
                 bookingTestCompleted && agreementAccepted 
-                  ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
-                  : 'bg-gradient-to-br from-orange-500 to-amber-600'
+                  ? 'bg-green-600' 
+                  : 'bg-slate-700'
               }`}>
                 {bookingTestCompleted && agreementAccepted ? (
-                  <CheckCircle2 className="h-8 w-8 text-white" />
+                  <CheckCircle2 className="h-6 w-6 text-white" />
                 ) : (
-                  <Settings className="h-8 w-8 text-white" />
+                  <Settings className="h-6 w-6 text-white" />
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 via-indigo-100 to-pink-50 border-2 border-purple-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-200/30 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-purple-300/40 transition-all"></div>
-          <CardContent className="p-6 relative">
+        <Card className="border border-gray-200">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Company</p>
-                <p className="text-lg font-bold text-gray-900 truncate mb-2">{user?.company?.companyName || '—'}</p>
+                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">Company</p>
+                <p className="text-lg font-semibold text-gray-900 truncate mb-2">{user?.company?.companyName || '—'}</p>
                 <Badge 
                   variant={user?.company?.status === 'ACTIVE' ? 'success' : 'warning'} 
                   size="sm" 
-                  className="mt-2"
+                  className="mt-1"
                 >
                   {user?.company?.status || 'UNKNOWN'}
                 </Badge>
               </div>
-              <div className="p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl transform group-hover:scale-110 transition-transform">
-                <Building2 className="h-8 w-8 text-white" />
+              <div className="p-3 bg-gray-700 rounded-md">
+                <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Source health status strip */}
-      <Card className="bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 shadow-lg">
+      {/* Source health status strip */}
+      <Card className="bg-green-50 border border-green-300">
         <CardContent className="p-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-md">
+              <div className="p-2 bg-green-600 rounded-md">
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-bold text-green-900">All Sources Healthy</p>
-                <p className="text-xs text-green-700">System operational and ready</p>
+                <p className="text-sm font-semibold text-gray-900">All Sources Healthy</p>
+                <p className="text-xs text-gray-600">System operational and ready</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-lg border border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-semibold text-green-800">Live</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-green-200">
+              <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+              <span className="text-xs font-medium text-gray-700">Live</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Enhanced Onboarding steps */}
+      {/* Onboarding steps */}
       {(!httpConfigured || !grpcConfigured || !bookingTestCompleted || !agreementAccepted) && (
-        <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          <CardHeader className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
-            <div className="relative flex items-center gap-3">
-              <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                <Zap className="w-6 h-6" />
+        <Card className="border border-gray-200">
+          <CardHeader className="bg-slate-700 text-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-md">
+                <Zap className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-white text-2xl font-bold">Complete Your Setup</CardTitle>
-                <p className="text-blue-100 text-sm mt-1">Follow these steps to get started with your agent portal</p>
+                <CardTitle className="text-white text-xl font-semibold">Complete Your Setup</CardTitle>
+                <p className="text-slate-200 text-sm mt-0.5">Follow these steps to get started with your agent portal</p>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6 md:p-8 relative">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Step 1 */}
               <div 
-                className={`group flex flex-col items-start p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
+                className={`flex flex-col items-start p-4 rounded-md cursor-pointer ${
                   !httpConfigured || !grpcConfigured 
-                    ? 'bg-white hover:bg-blue-50 shadow-lg hover:shadow-2xl border-2 border-blue-300 transform hover:-translate-y-1' 
-                    : 'bg-gray-50 border-2 border-gray-200'
+                      ? 'bg-white hover:bg-gray-50 border border-slate-300' 
+                    : 'bg-gray-50 border border-gray-200'
                 }`}
                 onClick={() => {
                   if (!httpConfigured || !grpcConfigured) {
@@ -308,11 +301,11 @@ export default function AgentPage() {
                   }
                 }}
               >
-                <div className="flex items-start gap-4 w-full">
-                  <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg transition-all ${
+                <div className="flex items-start gap-3 w-full">
+                  <div className={`flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center font-semibold text-lg ${
                     httpConfigured && grpcConfigured 
-                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
-                      : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white group-hover:scale-110'
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-slate-700 text-white'
                   }`}>
                     {httpConfigured && grpcConfigured ? <CheckCircle2 className="w-7 h-7" /> : '1'}
                   </div>
@@ -323,7 +316,6 @@ export default function AgentPage() {
                       <Button 
                         size="sm" 
                         variant="primary" 
-                        className="shadow-md hover:shadow-lg transform hover:scale-105"
                         onClick={(e) => {
                           e.stopPropagation()
                           setShowEndpointConfig(true)
@@ -346,10 +338,10 @@ export default function AgentPage() {
 
               {/* Step 2 */}
               <div 
-                className={`group flex flex-col items-start p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
+                className={`flex flex-col items-start p-4 rounded-md cursor-pointer ${
                   !bookingTestCompleted && httpConfigured && grpcConfigured 
-                    ? 'bg-white hover:bg-blue-50 shadow-lg hover:shadow-2xl border-2 border-blue-300 transform hover:-translate-y-1' 
-                    : 'bg-gray-50 border-2 border-gray-200'
+                      ? 'bg-white hover:bg-gray-50 border border-slate-300' 
+                    : 'bg-gray-50 border border-gray-200'
                 }`}
                 onClick={() => {
                   if (!bookingTestCompleted && httpConfigured && grpcConfigured) {
@@ -358,12 +350,12 @@ export default function AgentPage() {
                   }
                 }}
               >
-                <div className="flex items-start gap-4 w-full">
-                  <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg transition-all ${
+                <div className="flex items-start gap-3 w-full">
+                  <div className={`flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center font-semibold text-lg ${
                     bookingTestCompleted 
-                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                      ? 'bg-green-600 text-white' 
                       : httpConfigured && grpcConfigured 
-                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white group-hover:scale-110' 
+                      ? 'bg-slate-700 text-white'
                       : 'bg-gray-300 text-gray-600'
                   }`}>
                     {bookingTestCompleted ? <CheckCircle2 className="w-7 h-7" /> : '2'}
@@ -375,7 +367,6 @@ export default function AgentPage() {
                       <Button 
                         size="sm" 
                         variant="primary" 
-                        className="shadow-md hover:shadow-lg transform hover:scale-105"
                         onClick={(e) => {
                           e.stopPropagation()
                           setShowBookingTest(true)
@@ -401,10 +392,10 @@ export default function AgentPage() {
 
               {/* Step 3 */}
               <div 
-                className={`group flex flex-col items-start p-6 rounded-2xl cursor-pointer transition-all duration-300 ${
+                className={`flex flex-col items-start p-4 rounded-md cursor-pointer ${
                   !agreementAccepted && bookingTestCompleted 
-                    ? 'bg-white hover:bg-blue-50 shadow-lg hover:shadow-2xl border-2 border-blue-300 transform hover:-translate-y-1' 
-                    : 'bg-gray-50 border-2 border-gray-200'
+                      ? 'bg-white hover:bg-gray-50 border border-slate-300' 
+                    : 'bg-gray-50 border border-gray-200'
                 }`}
                 onClick={() => {
                   if (!agreementAccepted && bookingTestCompleted) {
@@ -412,12 +403,12 @@ export default function AgentPage() {
                   }
                 }}
               >
-                <div className="flex items-start gap-4 w-full">
-                  <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg transition-all ${
+                <div className="flex items-start gap-3 w-full">
+                  <div className={`flex-shrink-0 w-12 h-12 rounded-md flex items-center justify-center font-semibold text-lg ${
                     agreementAccepted 
-                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                      ? 'bg-green-600 text-white' 
                       : bookingTestCompleted 
-                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white group-hover:scale-110' 
+                      ? 'bg-slate-700 text-white'
                       : 'bg-gray-300 text-gray-600'
                   }`}>
                     {agreementAccepted ? <CheckCircle2 className="w-7 h-7" /> : '3'}
@@ -429,7 +420,6 @@ export default function AgentPage() {
                       <Button 
                         size="sm" 
                         variant="primary" 
-                        className="shadow-md hover:shadow-lg transform hover:scale-105"
                         onClick={(e) => {
                           e.stopPropagation()
                           navigate('/agreements')

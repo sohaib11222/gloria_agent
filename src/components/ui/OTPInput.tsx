@@ -74,7 +74,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           onPaste={handlePaste}
           className={cn(
             'w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+            'focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500',
             'transition-colors'
           )}
         />

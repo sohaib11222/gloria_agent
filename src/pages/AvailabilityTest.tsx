@@ -231,18 +231,18 @@ export default function AvailabilityTest() {
   ]
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl p-8 text-white shadow-lg">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="space-y-6">
+      <div className="bg-slate-700 rounded-md p-6 text-white">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-white/20 rounded-md">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold">Availability Test</h1>
+          <h1 className="text-2xl font-semibold">Availability</h1>
         </div>
-        <p className="text-teal-100 text-lg">
-          This calls the middleware Availability endpoint and will fan out to all sources that have an active agreement for you.
+        <p className="text-slate-200 text-sm">
+          Search for available vehicles from sources with active agreements.
         </p>
       </div>
 
@@ -257,10 +257,10 @@ export default function AvailabilityTest() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
-          <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 border-teal-200">
-            <CardHeader className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-t-xl">
+          <Card className="border border-gray-200">
+            <CardHeader className="bg-slate-700 text-white">
               <CardTitle className="text-white">Search Form</CardTitle>
-              <p className="text-teal-100 text-sm mt-1">Enter your search criteria to find available vehicles</p>
+              <p className="text-slate-200 text-sm mt-1">Enter your search criteria to find available vehicles</p>
             </CardHeader>
             <CardContent className="p-6">
               {submit.isError && (
@@ -275,7 +275,7 @@ export default function AvailabilityTest() {
               <div className="md:col-span-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Agreement</label>
                 <select
-                  className="mt-1 block w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white shadow-sm transition-all"
+                  className="mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white"
                   value={selectedAgreementId}
                   onChange={(e) => setSelectedAgreementId(e.target.value)}
                 >
@@ -342,7 +342,7 @@ export default function AvailabilityTest() {
               <Button 
                 type="submit" 
                 loading={submit.isPending}
-                className="h-12 px-8 text-base font-semibold shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-[1.02]"
+                className="h-11 px-6 text-sm font-medium"
               >
                 {submit.isPending ? 'Searching...' : 'Search Availability'}
               </Button>
@@ -351,10 +351,10 @@ export default function AvailabilityTest() {
         </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
-            <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-t-xl">
+          <Card className="border border-gray-200">
+            <CardHeader className="bg-slate-700 text-white">
               <CardTitle className="text-white">Results</CardTitle>
-              <p className="text-emerald-100 text-sm mt-1">
+              <p className="text-slate-200 text-sm mt-1">
                 {vehicleList.length > 0 ? `${vehicleList.length} offer${vehicleList.length !== 1 ? 's' : ''} found` : 'No results yet'}
               </p>
             </CardHeader>
@@ -362,15 +362,15 @@ export default function AvailabilityTest() {
               {requestId ? (
                 <div className="space-y-4">
                   {isPolling && (
-                    <div className="flex items-center justify-center gap-3 py-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="flex items-center justify-center gap-3 py-3 bg-gray-50 border border-gray-200 rounded-md">
                       <Loader size="sm" />
-                      <span className="text-sm font-medium text-blue-700">Polling for more results...</span>
+                      <span className="text-sm text-gray-700">Polling for more results...</span>
                     </div>
                   )}
                   {vehicleList.length > 0 ? (
                     <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                       {vehicleList.map((offer, idx) => (
-                        <Card key={idx} className="border-2 border-gray-200 hover:border-teal-300 hover:shadow-md transition-all duration-300">
+                        <Card key={idx} className="border border-gray-200">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -380,7 +380,7 @@ export default function AvailabilityTest() {
                                   <span>•</span>
                                   <span>{offer.rate_plan_code}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg inline-flex">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md inline-flex">
                                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -441,14 +441,14 @@ export default function AvailabilityTest() {
         {/* Right sidebar with saved searches and summary */}
         <div className="space-y-6">
           {/* Saved searches */}
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-xl">
+          <Card className="border border-gray-200">
+            <CardHeader className="bg-slate-700 text-white">
               <CardTitle className="text-white">Saved Searches</CardTitle>
-              <p className="text-blue-100 text-sm mt-1">Quick access to recent searches</p>
+              <p className="text-slate-200 text-sm mt-1">Quick access to recent searches</p>
             </CardHeader>
             <CardContent className="p-5">
               <div className="space-y-3">
-                <div className="p-4 bg-white rounded-xl border-2 border-gray-200 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all duration-300">
+                <div className="p-4 bg-white rounded-md border border-gray-200 cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-bold text-gray-900">Manchester → Glasgow</p>
                     <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -458,7 +458,7 @@ export default function AvailabilityTest() {
                   <p className="text-xs text-gray-600 font-medium">7 days rental</p>
                   <p className="text-xs text-gray-400 mt-1">Last run: 2h ago</p>
                 </div>
-                <div className="p-4 bg-white rounded-xl border-2 border-gray-200 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all duration-300">
+                <div className="p-4 bg-white rounded-md border border-gray-200 cursor-pointer hover:bg-gray-50">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-bold text-gray-900">London Heathrow → Edinburgh</p>
                     <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -469,19 +469,19 @@ export default function AvailabilityTest() {
                   <p className="text-xs text-gray-400 mt-1">Last run: Yesterday</p>
                 </div>
               </div>
-              <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 rounded-xl text-center">
-                <p className="text-xs text-blue-800 font-semibold">
-                  💡 <strong>Coming soon:</strong> Save searches locally and re-run them
+              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md text-center">
+                <p className="text-xs text-gray-700 font-medium">
+                  Coming soon: Save searches locally and re-run them
                 </p>
               </div>
             </CardContent>
           </Card>
 
           {/* Summary card */}
-          <Card className="sticky top-6 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-xl">
+          <Card className="sticky top-6 border border-gray-200">
+            <CardHeader className="bg-slate-700 text-white">
               <CardTitle className="text-white">Request Summary</CardTitle>
-              <p className="text-purple-100 text-sm mt-1">Real-time search statistics</p>
+              <p className="text-slate-200 text-sm mt-1">Real-time search statistics</p>
             </CardHeader>
             <CardContent className="p-6">
               {requestId ? (
@@ -496,26 +496,26 @@ export default function AvailabilityTest() {
                     </Badge>
                   </div>
                   {isPolling && (
-                    <div className="flex items-center justify-center gap-3 py-3 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="flex items-center justify-center gap-3 py-3 bg-gray-50 border border-gray-200 rounded-md">
                       <Loader size="sm" />
-                      <span className="text-sm font-medium text-blue-700">Polling...</span>
+                      <span className="text-sm text-gray-700">Polling...</span>
                     </div>
                   )}
-                  <div className="grid grid-cols-1 gap-4 pt-3 border-t-2 border-gray-200">
-                    <div className="p-4 bg-white rounded-xl border-2 border-gray-200 shadow-sm">
+                  <div className="grid grid-cols-1 gap-4 pt-3 border-t border-gray-200">
+                    <div className="p-4 bg-white rounded-md border border-gray-200">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Responses Received</div>
                       <div className="text-3xl font-bold text-gray-900">{vehicleList.length}</div>
                     </div>
-                    <div className="p-4 bg-white rounded-xl border-2 border-gray-200 shadow-sm">
+                    <div className="p-4 bg-white rounded-md border border-gray-200">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Total Expected</div>
                       <div className="text-3xl font-bold text-gray-900">{totalExpected ?? '—'}</div>
                     </div>
-                    <div className="p-4 bg-white rounded-xl border-2 border-gray-200 shadow-sm">
+                    <div className="p-4 bg-white rounded-md border border-gray-200">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Timed Out Sources</div>
                       <div className="text-3xl font-bold text-gray-900">{timedOutSources}</div>
                     </div>
                   </div>
-                  <div className="pt-3 border-t-2 border-gray-200">
+                  <div className="pt-3 border-t border-gray-200">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Request ID</div>
                     <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
                       <code className="text-xs font-mono text-gray-900 break-all">{requestId}</code>

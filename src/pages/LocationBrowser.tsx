@@ -48,15 +48,15 @@ export default function LocationBrowser() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-8 text-white shadow-lg">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-            <MapPin className="w-8 h-8" />
+    <div className="space-y-6">
+      <div className="bg-slate-700 rounded-md p-6 text-white">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-white/20 rounded-md">
+            <MapPin className="w-6 h-6" />
           </div>
-          <h1 className="text-4xl font-bold">Location Browser</h1>
+          <h1 className="text-2xl font-semibold">Location Browser</h1>
         </div>
-        <p className="text-indigo-100 text-lg">Browse and search available locations</p>
+        <p className="text-slate-200 text-sm">Browse and search available locations</p>
       </div>
 
       {/* Error Display */}
@@ -69,10 +69,10 @@ export default function LocationBrowser() {
       )}
 
       {/* Search and Filter */}
-      <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
-        <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-xl">
+      <Card className="border border-gray-200">
+        <CardHeader className="bg-slate-700 text-white">
           <CardTitle className="text-white">Search Locations</CardTitle>
-          <p className="text-indigo-100 text-sm mt-1">Find locations by name, UN/LOCODE, or country</p>
+          <p className="text-slate-200 text-sm mt-1">Find locations by name, UN/LOCODE, or country</p>
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSearch} className="space-y-5">
@@ -93,7 +93,7 @@ export default function LocationBrowser() {
                   Filter by Agreement
                 </label>
                 <select
-                  className="w-full border-2 border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all"
+                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white"
                   value={selectedAgreementId}
                   onChange={(e) => {
                     setSelectedAgreementId(e.target.value)
@@ -109,7 +109,7 @@ export default function LocationBrowser() {
                 </select>
               </div>
             </div>
-            <Button type="submit" variant="primary" size="md" className="h-11 font-semibold shadow-md hover:shadow-lg">
+            <Button type="submit" variant="primary" size="md" className="h-10 font-medium">
               <Search className="w-4 h-4 mr-2" />
               Search Locations
             </Button>
@@ -118,13 +118,13 @@ export default function LocationBrowser() {
       </Card>
 
       {/* Locations List */}
-      <Card className="bg-gradient-to-br from-white to-gray-50 border-gray-200">
-        <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-xl">
+      <Card className="border border-gray-200">
+        <CardHeader className="bg-slate-700 text-white">
           <CardTitle className="text-white">
             Locations ({locations.length}
             {locationsData?.total ? ` of ${locationsData.total}` : ''})
           </CardTitle>
-          <p className="text-indigo-100 text-sm mt-1">Browse all available locations</p>
+          <p className="text-slate-200 text-sm mt-1">Browse all available locations</p>
         </CardHeader>
         <CardContent className="p-6">
           {isLoading ? (
@@ -140,9 +140,9 @@ export default function LocationBrowser() {
             </div>
           ) : locations.length > 0 ? (
             <>
-              <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+              <div className="overflow-x-auto rounded-md border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         UN/LOCODE
@@ -163,9 +163,9 @@ export default function LocationBrowser() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {locations.map((loc: Location) => (
-                      <tr key={loc.unlocode} className="hover:bg-indigo-50 transition-colors duration-150">
+                      <tr key={loc.unlocode} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <code className="text-sm font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg">{loc.unlocode}</code>
+                          <code className="text-sm font-semibold text-gray-900 bg-gray-100 px-2 py-1 rounded-md">{loc.unlocode}</code>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                           {loc.place}
@@ -175,7 +175,7 @@ export default function LocationBrowser() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {loc.iata_code ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
                               {loc.iata_code}
                             </span>
                           ) : (
@@ -200,7 +200,7 @@ export default function LocationBrowser() {
                     variant="secondary"
                     size="md"
                     onClick={() => setCursor(locationsData.next_cursor || '')}
-                    className="shadow-md hover:shadow-lg font-semibold"
+                    className="font-medium"
                   >
                     Load More Locations
                   </Button>
@@ -209,8 +209,8 @@ export default function LocationBrowser() {
             </>
           ) : (
             <div className="text-center py-16">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="h-10 w-10 text-indigo-600" />
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="h-8 w-8 text-gray-600" />
               </div>
               <h3 className="mt-2 text-lg font-bold text-gray-900">No locations found</h3>
               <p className="mt-2 text-sm text-gray-600">

@@ -12,6 +12,7 @@ import AvailabilityTest from '../pages/AvailabilityTest'
 import Agreements from '../pages/Agreements'
 import MyBookings from '../pages/MyBookings'
 import LocationBrowser from '../pages/LocationBrowser'
+import Support from '../pages/Support'
 import DocsPage from '../pages/Docs'
 import DocsFullscreen from '../pages/DocsFullscreen'
 import NotFound from '../pages/NotFound'
@@ -37,6 +38,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="agreements" element={<Agreements />} />
         <Route path="bookings" element={<MyBookings />} />
         <Route path="locations" element={<LocationBrowser />} />
+        <Route path="support" element={<Support />} />
         <Route path="docs" element={<DocsPage />} />
         <Route index element={<Navigate to="/agent" replace />} />
         {/* 404 for protected routes - will show with Shell layout */}

@@ -10,10 +10,10 @@ export const AgentInformation: React.FC<AgentInformationProps> = ({ user }) => {
   if (!user) return null
 
   return (
-    <Card className="mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-      <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-xl">
+    <Card className="mb-8 border border-gray-200">
+      <CardHeader className="bg-slate-700 text-white">
         <CardTitle className="text-white">Agent Information</CardTitle>
-        <p className="text-blue-100 text-sm mt-1">Your account details and credentials</p>
+        <p className="text-slate-200 text-sm mt-1">Your account details and credentials</p>
       </CardHeader>
       <CardContent className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

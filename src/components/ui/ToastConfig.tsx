@@ -76,7 +76,7 @@ export const ProfessionalToaster = () => {
             borderLeft: '5px solid #3b82f6',
             boxShadow: '0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04)',
           },
-          icon: <Loader2 size={22} className="text-blue-500 flex-shrink-0 animate-spin" />,
+          icon: <Loader2 size={22} className="text-slate-600 flex-shrink-0 animate-spin" />,
           className: 'toast-loading',
         },
         // Warning toast
@@ -157,7 +157,7 @@ export const showToast = {
   },
   info: (message: string) => {
     return toast(message, {
-      icon: <Info size={22} className="text-blue-500 flex-shrink-0" />,
+      icon: <Info size={22} className="text-slate-600 flex-shrink-0" />,
       style: {
         background: '#ffffff',
         color: '#111827',

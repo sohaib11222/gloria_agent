@@ -45,10 +45,10 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
       icon: <AlertTriangle className="h-5 w-5 text-yellow-600" />,
     },
     info: {
-      container: 'bg-blue-50 border-blue-200',
-      text: 'text-blue-800',
-      title: 'text-blue-900',
-      icon: <Info className="h-5 w-5 text-blue-600" />,
+      container: 'bg-slate-50 border-slate-200',
+      text: 'text-slate-800',
+      title: 'text-slate-900',
+      icon: <Info className="h-5 w-5 text-slate-700" />,
     },
   }
 
@@ -82,7 +82,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
               'flex-shrink-0 ml-3 rounded-md p-1 transition-colors',
               variant === 'error' && 'hover:bg-red-100',
               variant === 'warning' && 'hover:bg-yellow-100',
-              variant === 'info' && 'hover:bg-blue-100'
+              variant === 'info' && 'hover:bg-slate-100'
             )}
             aria-label="Dismiss"
           >

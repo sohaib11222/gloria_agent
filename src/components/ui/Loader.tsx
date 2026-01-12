@@ -16,7 +16,7 @@ export const Loader: React.FC<LoaderProps> = ({ size = 'md', className }) => {
   return (
     <div className={cn('flex items-center justify-center', className)}>
       <svg
-        className={cn('animate-spin text-blue-600', sizeClasses[size])}
+        className={cn('animate-spin text-slate-600', sizeClasses[size])}
         fill="none"
         viewBox="0 0 24 24"
       >

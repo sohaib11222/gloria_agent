@@ -98,46 +98,33 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Animated background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="max-w-md w-full space-y-8 relative z-10">
-        <div className="text-center animate-fade-in">
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
-              <div className="relative bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl p-4 shadow-2xl transform transition-transform hover:scale-105">
-                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6">
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="bg-slate-700 rounded-md p-3">
+              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
             </div>
           </div>
-          <h2 className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-1">
             Verify Your Email
           </h2>
-          <p className="mt-3 text-base text-gray-600 font-medium">
+          <p className="mt-2 text-sm text-gray-600">
             We've sent a verification code to
           </p>
-          <p className="mt-2 text-sm font-semibold text-green-700 bg-green-50 border border-green-200 px-4 py-2 rounded-lg inline-block shadow-sm">
+          <p className="mt-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 px-4 py-2 rounded-md inline-block">
             {email}
           </p>
         </div>
         
-        <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/90 transform transition-all duration-300 hover:shadow-3xl">
-          <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden rounded-t-xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-600/5 to-emerald-600/5"></div>
-            <div className="relative">
-              <CardTitle className="text-2xl font-bold text-gray-900 text-center">Enter Verification Code</CardTitle>
-              <p className="text-sm text-gray-600 mt-2 text-center font-medium">
-                Please check your email and enter the 4-digit code below
-              </p>
-            </div>
+        <Card className="border border-gray-200">
+          <CardHeader className="border-b border-gray-200 bg-white">
+            <CardTitle className="text-2xl font-bold text-gray-900 text-center">Enter Verification Code</CardTitle>
+            <p className="text-sm text-gray-600 mt-2 text-center font-medium">
+              Please check your email and enter the 4-digit code below
+            </p>
           </CardHeader>
           <CardContent className="pt-8">
             <div className="space-y-8">
@@ -190,14 +177,14 @@ export default function VerifyEmailPage() {
                   </button>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                     <div className="flex-1">
-                      <p className="text-xs font-medium text-blue-900 mb-1">Email not received?</p>
-                      <ul className="text-xs text-blue-700 space-y-0.5">
+                      <p className="text-xs font-medium text-gray-900 mb-1">Email not received?</p>
+                      <ul className="text-xs text-gray-700 space-y-0.5">
                         <li>• Check your spam/junk folder</li>
                         <li>• Ensure the email address is correct</li>
                         <li>• Wait a few moments and try resending</li>
@@ -228,30 +215,6 @@ export default function VerifyEmailPage() {
           </p>
         </div>
       </div>
-
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-      `}</style>
     </div>
   )
 }

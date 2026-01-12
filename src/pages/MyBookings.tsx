@@ -84,22 +84,22 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl p-8 text-white shadow-lg">
+    <div className="space-y-6">
+      <div className="bg-slate-700 rounded-md p-6 text-white">
         <div className="flex items-center gap-3 mb-3">
-          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+          <div className="p-2 bg-white/20 rounded-md">
             <Calendar className="w-8 h-8" />
           </div>
-          <h1 className="text-4xl font-bold">My Bookings</h1>
+          <h1 className="text-2xl font-semibold">My Bookings</h1>
         </div>
-        <p className="text-amber-100 text-lg">Manage your bookings and view details</p>
+        <p className="text-slate-200 text-sm">Manage your bookings and view details</p>
       </div>
 
       {/* Filters */}
-      <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-        <CardHeader className="bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-t-xl">
-          <CardTitle className="text-white">Filters</CardTitle>
-          <p className="text-amber-100 text-sm mt-1">Search and filter your bookings</p>
+      <Card className="border border-gray-200">
+        <CardHeader className="bg-slate-700 border-b border-slate-600">
+          <h3 className="text-lg font-semibold text-white">Filters</h3>
+          <p className="text-slate-200 text-sm mt-1">Search and filter your bookings</p>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -139,10 +139,10 @@ export default function MyBookings() {
       )}
 
       {/* Bookings Table */}
-      <Card className="bg-gradient-to-br from-white to-gray-50 border-gray-200">
-        <CardHeader className="bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-t-xl">
-          <CardTitle className="text-white">Bookings ({filteredBookings.length})</CardTitle>
-          <p className="text-amber-100 text-sm mt-1">View and manage all your bookings</p>
+      <Card className="border border-gray-200">
+        <CardHeader className="bg-slate-700 border-b border-slate-600">
+          <h3 className="text-lg font-semibold text-white">Bookings ({filteredBookings.length})</h3>
+          <p className="text-slate-200 text-sm mt-1">View and manage all your bookings</p>
         </CardHeader>
         <CardContent className="p-6">
           {isLoading ? (
@@ -157,9 +157,9 @@ export default function MyBookings() {
               />
             </div>
           ) : filteredBookings.length > 0 ? (
-            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+            <div className="overflow-x-auto rounded-md border border-gray-200">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Booking ID
@@ -230,7 +230,7 @@ export default function MyBookings() {
                                 setSelectedBooking(b as Booking)
                                 setIsDetailModalOpen(true)
                               }}
-                              className="hover:bg-blue-50 hover:text-blue-600"
+                              className="hover:bg-gray-50 hover:text-gray-900"
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
@@ -257,7 +257,7 @@ export default function MyBookings() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="h-10 w-10 text-amber-600" />
               </div>
               <h3 className="mt-2 text-lg font-bold text-gray-900">No bookings found</h3>

@@ -192,3 +192,26 @@ tr:last-child td {
   background: #2563eb;
 }
 
+/* SDK Sidebar Styles */
+.sdk-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f9fafb;
+}
+
+.sdk-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sdk-sidebar::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.sdk-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.sdk-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+

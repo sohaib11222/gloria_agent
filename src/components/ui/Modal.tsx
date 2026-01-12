@@ -66,7 +66,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-gray-900 bg-opacity-50"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -75,7 +75,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
-            'relative bg-white rounded-lg shadow-xl w-full transform transition-all',
+            'relative bg-white rounded-md border border-gray-200 w-full',
             sizeClasses[size],
             className
           )}
@@ -92,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg p-1 hover:bg-gray-100"
+                className="text-gray-400 hover:text-gray-600 rounded-md p-1 hover:bg-gray-100"
                 aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
@@ -107,7 +107,7 @@ export const Modal: React.FC<ModalProps> = ({
 
           {/* Footer */}
           {footer && (
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-white">
               {footer}
             </div>
           )}

@@ -364,10 +364,10 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
 
             {/* Test Results */}
             {testResults && (
-              <Card className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+              <Card className="mt-6 border border-gray-200">
                 <CardContent className="p-6">
                   <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Test Results
@@ -416,8 +416,8 @@ export const BookingTest: React.FC<BookingTestProps> = ({ onTestCompleted }) => 
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 p-4 bg-white border-2 border-blue-200 rounded-xl shadow-sm">
-                    <p className="text-sm font-semibold text-blue-900">{testResults.message}</p>
+                  <div className="mt-4 p-4 bg-white border border-gray-200 rounded-md">
+                    <p className="text-sm font-semibold text-gray-900">{testResults.message}</p>
                   </div>
                 </div>
               </CardContent>
