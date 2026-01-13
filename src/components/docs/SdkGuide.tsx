@@ -109,25 +109,40 @@ for await (const chunk of client.getAvailability().search(criteria)) {
   if (chunk.status === 'COMPLETE') break;
 }`,
       go: `// Create search criteria
-criteria := sdk.AvailabilityCriteria{
-    PickupLocode: "PKKHI",
-    ReturnLocode: "PKLHE",
-    PickupAt: time.Date(2025, 11, 3, 10, 0, 0, 0, time.UTC),
-    ReturnAt: time.Date(2025, 11, 5, 10, 0, 0, 0, time.UTC),
-    DriverAge: 28,
-    Currency: "USD",
-    AgreementRefs: []string{"AGR-001"},
-    VehiclePrefs: []string{"ECONOMY"}, // Optional
-}
+criteria := sdk.MakeAvailabilityCriteria(
+    "PKKHI",
+    "PKLHE",
+    time.Date(2025, 11, 3, 10, 0, 0, 0, time.UTC),
+    time.Date(2025, 11, 5, 10, 0, 0, 0, time.UTC),
+    28,
+    "USD",
+    []string{"AGR-001"},
+).WithVehiclePrefs([]string{"ECONOMY"})
 
 // Search and stream results
-chunks, err := client.Availability().Search(ctx, criteria)
+resultChan, err := client.Availability().Search(ctx, criteria)
 if err != nil {
     panic(err)
 }
 
-for chunk := range chunks {
-    fmt.Printf("[%s] items=%d cursor=%d\\n", chunk.Status, len(chunk.Items), chunk.Cursor)
+// Process results from channel
+for result := range resultChan {
+    if result.Error != nil {
+        panic(result.Error)
+    }
+    chunk := result.Chunk
+    cursor := 0
+    if chunk.Cursor != nil {
+        cursor = *chunk.Cursor
+    }
+    fmt.Printf("[%s] items=%d cursor=%d\\n", chunk.Status, len(chunk.Items), cursor)
+    
+    // Process offers as they arrive
+    for _, offer := range chunk.Items {
+        fmt.Println("Offer:", offer)
+    }
+    
+    // Stop when complete
     if chunk.Status == "COMPLETE" {
         break
     }
@@ -274,24 +289,46 @@ const result = await client.getBooking().create(booking, 'unique-idempotency-key
 await client.getBooking().modify(result.supplierBookingRef, { driver: { email: 'new@example.com' } }, 'AGR-001');
 await client.getBooking().check(result.supplierBookingRef, 'AGR-001');
 await client.getBooking().cancel(result.supplierBookingRef, 'AGR-001');`,
-      go: `// Create booking
-booking := sdk.BookingCreate{
+      go: `// Create booking from availability offer
+booking := &sdk.BookingCreate{
     AgreementRef: "AGR-001",
     SupplierID: "SRC-AVIS",
     OfferID: "off_123",
+    Driver: &sdk.Driver{
+        FirstName: "Ali",
+        LastName: "Raza",
+        Email: "ali@example.com",
+        Phone: "+92...",
+        Age: 28,
+    },
 }
 
+// Create booking (requires Idempotency-Key)
 result, err := client.Booking().Create(ctx, booking, "unique-idempotency-key-123")
 if err != nil {
     panic(err)
 }
+fmt.Println("Booking Reference:", result.SupplierBookingRef)
 
-// Modify, check, or cancel
-client.Booking().Modify(ctx, result.SupplierBookingRef, 
-    map[string]interface{}{"driver": map[string]interface{}{"email": "new@example.com"}},
+// Modify booking (sourceID can be empty string, backend resolves from agreement_ref)
+modifyResult, err := client.Booking().Modify(ctx, result.SupplierBookingRef, 
+    map[string]interface{}{"driver": map[string]interface{}{"email": "newemail@example.com"}},
     "AGR-001", "")
-client.Booking().Check(ctx, result.SupplierBookingRef, "AGR-001", "")
-client.Booking().Cancel(ctx, result.SupplierBookingRef, "AGR-001", "")`,
+if err != nil {
+    panic(err)
+}
+
+// Check booking status
+status, err := client.Booking().Check(ctx, result.SupplierBookingRef, "AGR-001", "")
+if err != nil {
+    panic(err)
+}
+
+// Cancel booking
+cancelResult, err := client.Booking().Cancel(ctx, result.SupplierBookingRef, "AGR-001", "")
+if err != nil {
+    panic(err)
+}`,
       php: `use HMS\\CarHire\\DTO\\BookingCreate;
 
 // Create booking from offer
@@ -299,56 +336,133 @@ $booking = BookingCreate::fromOffer([
     'agreement_ref' => 'AGR-001',
     'supplier_id' => 'SRC-AVIS',
     'offer_id' => 'off_123',
+    'driver' => [
+        'firstName' => 'Ali',
+        'lastName' => 'Raza',
+        'email' => 'ali@example.com',
+        'phone' => '+92...',
+        'age' => 28,
+    ],
 ]);
 
-// Create booking
+// Create booking (requires Idempotency-Key)
 $result = $client->booking()->create($booking, 'unique-idempotency-key-123');
+echo 'Booking Reference: ' . ($result['supplierBookingRef'] ?? '');
 
-// Modify, check, or cancel
-$client->booking()->modify($result['supplierBookingRef'], ['driver' => ['email' => 'new@example.com']], 'AGR-001', '');
-$client->booking()->check($result['supplierBookingRef'], 'AGR-001', '');
-$client->booking()->cancel($result['supplierBookingRef'], 'AGR-001', '');`,
+// Modify booking (source_id is optional, backend resolves from agreement_ref)
+$client->booking()->modify(
+    $result['supplierBookingRef'],
+    ['driver' => ['email' => 'newemail@example.com']],
+    'AGR-001'
+);
+
+// Check booking status
+$status = $client->booking()->check($result['supplierBookingRef'], 'AGR-001');
+
+// Cancel booking
+$client->booking()->cancel($result['supplierBookingRef'], 'AGR-001');`,
       python: `from carhire import BookingCreate
 
-# Create booking from offer
+# Create booking from availability offer
 booking = BookingCreate.from_offer({
     "agreement_ref": "AGR-001",
     "supplier_id": "SRC-AVIS",
     "offer_id": "off_123",
+    "driver": {
+        "firstName": "Ali",
+        "lastName": "Raza",
+        "email": "ali@example.com",
+        "phone": "+92...",
+        "age": 28,
+    },
 })
 
-# Create booking
-result = await client.get_booking().create(booking, "idem-123")
+# Create booking (requires Idempotency-Key)
+result = await client.get_booking().create(booking, "unique-idempotency-key-123")
+print(f"Booking Reference: {result.get('supplierBookingRef')}")
 
-# Modify, check, or cancel
-await client.get_booking().modify(result["supplierBookingRef"], {"driver": {"email": "new@example.com"}}, "AGR-001")
-await client.get_booking().check(result["supplierBookingRef"], "AGR-001")
+# Modify booking (source_id is optional, backend resolves from agreement_ref)
+await client.get_booking().modify(
+    result["supplierBookingRef"],
+    {"driver": {"email": "newemail@example.com"}},
+    "AGR-001"
+)
+
+# Check booking status
+status = await client.get_booking().check(result["supplierBookingRef"], "AGR-001")
+
+# Cancel booking
 await client.get_booking().cancel(result["supplierBookingRef"], "AGR-001")`,
-      java: `// Create booking
+      java: `// Create booking from availability offer
 Map<String, Object> booking = new HashMap<>();
 booking.put("agreement_ref", "AGR-001");
 booking.put("supplier_id", "SRC-AVIS");
 booking.put("offer_id", "off_123");
 
-Map<String, Object> result = client.getBooking().create(booking, "unique-idempotency-key-123").join();
+Map<String, Object> driver = new HashMap<>();
+driver.put("firstName", "Ali");
+driver.put("lastName", "Raza");
+driver.put("email", "ali@example.com");
+driver.put("phone", "+92...");
+driver.put("age", 28);
+booking.put("driver", driver);
 
-// Modify, check, or cancel
-client.getBooking().modify((String) result.get("supplierBookingRef"), Map.of("driver", Map.of("email", "new@example.com")), "AGR-001", "");
-client.getBooking().check((String) result.get("supplierBookingRef"), "AGR-001", "").join();
-client.getBooking().cancel((String) result.get("supplierBookingRef"), "AGR-001", "").join();`,
-      perl: `# Create booking
+// Create booking (requires Idempotency-Key)
+Map<String, Object> result = client.getBooking().create(booking, "unique-idempotency-key-123").join();
+System.out.println("Booking Reference: " + result.get("supplierBookingRef"));
+
+// Modify booking
+client.getBooking().modify(
+    (String) result.get("supplierBookingRef"),
+    Map.of("driver", Map.of("email", "newemail@example.com")),
+    "AGR-001",
+    null
+).join();
+
+// Check booking status
+Map<String, Object> status = client.getBooking().check(
+    (String) result.get("supplierBookingRef"),
+    "AGR-001",
+    null
+).join();
+
+// Cancel booking
+client.getBooking().cancel(
+    (String) result.get("supplierBookingRef"),
+    "AGR-001",
+    null
+).join();`,
+      perl: `# Create booking from availability offer
 my $booking = {
     agreement_ref => 'AGR-001',
     supplier_id   => 'SRC-AVIS',
     offer_id      => 'off_123',
+    driver => {
+        firstName => 'Ali',
+        lastName  => 'Raza',
+        email     => 'ali@example.com',
+        phone     => '+92...',
+        age       => 28,
+    },
 };
 
+# Create booking (requires Idempotency-Key)
 my $result = $client->booking()->create($booking, 'unique-idempotency-key-123');
+print "Booking Reference: " . ($result->{supplierBookingRef} || '') . "\\n";
 
-# Modify, check, or cancel
-$client->booking()->modify($result->{supplierBookingRef}, {driver => {email => 'new@example.com'}}, 'AGR-001', '');
-$client->booking()->check($result->{supplierBookingRef}, 'AGR-001', '');
-$client->booking()->cancel($result->{supplierBookingRef}, 'AGR-001', '');`,
+# Modify booking
+$client->booking()->modify(
+    $result->{supplierBookingRef},
+    {driver => {email => 'newemail@example.com'}},
+    'AGR-001',
+    undef  # source_id is optional, backend resolves from agreement_ref
+);
+
+# Check booking status
+my $status = $client->booking()->check($result->{supplierBookingRef}, 'AGR-001', undef);
+
+# Cancel booking
+$client->booking()->cancel($result->{supplierBookingRef}, 'AGR-001', undef);`,
     };
     return (
       <div>
@@ -384,9 +498,16 @@ if err != nil {
     panic(err)
 }
 fmt.Printf("Location supported: %v\\n", isSupported)`,
-      php: `// Check if location is supported
+      php: `// Check if a location is supported by an agreement
 $isSupported = $client->locations()->isSupported('AGR-001', 'PKKHI');
-echo "Location supported: " . ($isSupported ? 'yes' : 'no') . "\\n";`,
+if ($isSupported) {
+    echo "Location PKKHI is supported by agreement AGR-001\\n";
+}
+
+// Note: For searching UN/LOCODE locations or getting agreement coverage,
+// use the REST API endpoints directly:
+// GET /locations?query=Manchester
+// GET /coverage/agreement/{agreementId}`,
       python: `# Check if location is supported
 is_supported = await client.get_locations().is_supported("AGR-001", "PKKHI")
 print(f"Location supported: {is_supported}")`,
@@ -522,7 +643,7 @@ const config = Config.forRest({
   agentId: 'ag_123',
 });`,
       go: `// REST Configuration
-config := sdk.Config{
+config := sdk.ForRest(sdk.ConfigData{
     BaseURL: "https://your-gateway.example.com", // Required
     Token: "Bearer <JWT>", // Required
     APIKey: "<API_KEY>", // Optional
@@ -530,15 +651,16 @@ config := sdk.Config{
     CallTimeoutMs: 10000,
     AvailabilitySlaMs: 120000,
     LongPollWaitMs: 10000,
-}
+})
 
 // gRPC Configuration
-grpcConfig := sdk.Config{
-    Host: "api.example.com:50051",
-    CACert: "<CA_CERT>",
-    ClientCert: "<CLIENT_CERT>",
-    ClientKey: "<CLIENT_KEY>",
-}`,
+grpcConfig := sdk.ForGrpc(sdk.ConfigData{
+    Host: "api.example.com:50051", // Required
+    CACert: "<CA_CERT>", // Required
+    ClientCert: "<CLIENT_CERT>", // Required
+    ClientKey: "<CLIENT_KEY>", // Required
+    AgentID: "ag_123", // Optional
+})`,
       php: `// REST Configuration
 $config = Config::forRest([
     'baseUrl' => 'https://your-gateway.example.com', // Required
@@ -708,7 +830,7 @@ import (
 )
 
 func main() {
-    config := sdk.Config{
+    config := sdk.ForRest(sdk.ConfigData{
         BaseURL: "https://your-gateway.example.com",
         Token: "Bearer <JWT>",
         APIKey: "<YOUR_API_KEY>", // Optional
@@ -716,39 +838,54 @@ func main() {
         CallTimeoutMs: 12000,
         AvailabilitySlaMs: 120000,
         LongPollWaitMs: 10000,
-    }
+    })
     
     client := sdk.NewClient(config)
     ctx := context.Background()
     
     // Search availability
-    criteria := sdk.AvailabilityCriteria{
-        PickupLocode: "PKKHI",
-        ReturnLocode: "PKLHE",
-        PickupAt: time.Date(2025, 11, 3, 10, 0, 0, 0, time.UTC),
-        ReturnAt: time.Date(2025, 11, 5, 10, 0, 0, 0, time.UTC),
-        DriverAge: 28,
-        Currency: "USD",
-        AgreementRefs: []string{"AGR-001"},
-    }
+    criteria := sdk.MakeAvailabilityCriteria(
+        "PKKHI",
+        "PKLHE",
+        time.Date(2025, 11, 3, 10, 0, 0, 0, time.UTC),
+        time.Date(2025, 11, 5, 10, 0, 0, 0, time.UTC),
+        28,
+        "USD",
+        []string{"AGR-001"},
+    )
     
-    chunks, err := client.Availability().Search(ctx, criteria)
+    resultChan, err := client.Availability().Search(ctx, criteria)
     if err != nil {
         panic(err)
     }
     
-    for chunk := range chunks {
-        fmt.Printf("[%s] items=%d cursor=%d\\n", chunk.Status, len(chunk.Items), chunk.Cursor)
+    for result := range resultChan {
+        if result.Error != nil {
+            panic(result.Error)
+        }
+        chunk := result.Chunk
+        cursor := 0
+        if chunk.Cursor != nil {
+            cursor = *chunk.Cursor
+        }
+        fmt.Printf("[%s] items=%d cursor=%d\\n", chunk.Status, len(chunk.Items), cursor)
         if chunk.Status == "COMPLETE" {
             break
         }
     }
     
     // Create booking
-    booking := sdk.BookingCreate{
+    booking := &sdk.BookingCreate{
         AgreementRef: "AGR-001",
         SupplierID: "SRC-AVIS",
         OfferID: "off_123",
+        Driver: &sdk.Driver{
+            FirstName: "Ali",
+            LastName: "Raza",
+            Email: "ali@example.com",
+            Phone: "+92...",
+            Age: 28,
+        },
     }
     
     result, err := client.Booking().Create(ctx, booking, "idem-123")
@@ -799,6 +936,13 @@ $booking = BookingCreate::fromOffer([
     'agreement_ref' => 'AGR-001',
     'supplier_id' => 'SRC-AVIS',
     'offer_id' => 'off_123',
+    'driver' => [
+        'firstName' => 'Ali',
+        'lastName' => 'Raza',
+        'email' => 'ali@example.com',
+        'phone' => '+92...',
+        'age' => 28,
+    ],
 ]);
 
 $result = $client->booking()->create($booking, 'idem-123');
@@ -889,6 +1033,14 @@ booking.put("agreement_ref", "AGR-001");
 booking.put("supplier_id", "SRC-AVIS");
 booking.put("offer_id", "off_123");
 
+Map<String, Object> driver = new HashMap<>();
+driver.put("firstName", "Ali");
+driver.put("lastName", "Raza");
+driver.put("email", "ali@example.com");
+driver.put("phone", "+92...");
+driver.put("age", 28);
+booking.put("driver", driver);
+
 Map<String, Object> result = client.getBooking().create(booking, "idem-123").join();
 System.out.println(result.get("supplierBookingRef"));`,
       perl: `use CarHire::SDK;
@@ -926,6 +1078,13 @@ my $booking = {
     agreement_ref => 'AGR-001',
     supplier_id   => 'SRC-AVIS',
     offer_id      => 'off_123',
+    driver => {
+        firstName => 'Ali',
+        lastName  => 'Raza',
+        email     => 'ali@example.com',
+        phone     => '+92...',
+        age       => 28,
+    },
 };
 
 my $result = $client->booking()->create($booking, 'idem-123');
