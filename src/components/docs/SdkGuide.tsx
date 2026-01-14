@@ -108,8 +108,8 @@ for await (const chunk of client.getAvailability().search(criteria)) {
   console.log(\`[\${chunk.status}] items=\${chunk.items.length}\`);
   if (chunk.status === 'COMPLETE') break;
 }`,
-      go: `// Create search criteria
-criteria := sdk.MakeAvailabilityCriteria(
+      go: `// Create search criteria (with validation)
+criteria, err := sdk.MakeAvailabilityCriteria(
     "PKKHI",
     "PKLHE",
     time.Date(2025, 11, 3, 10, 0, 0, 0, time.UTC),
@@ -117,7 +117,10 @@ criteria := sdk.MakeAvailabilityCriteria(
     28,
     "USD",
     []string{"AGR-001"},
-).WithVehiclePrefs([]string{"ECONOMY"})
+)
+if err != nil {
+    log.Fatal(err)
+}
 
 // Search and stream results
 resultChan, err := client.Availability().Search(ctx, criteria)
@@ -180,7 +183,7 @@ criteria = AvailabilityCriteria.make(
     vehicle_prefs=["ECONOMY"],  # Optional
 )
 
-# Search and stream results
+# Search and stream results (uses async HTTP with httpx)
 async for chunk in client.get_availability().search(criteria):
     print(f"[{chunk.status}] items={len(chunk.items)} cursor={chunk.cursor or 0}")
     if chunk.status == "COMPLETE":
@@ -238,9 +241,9 @@ for my $chunk ($client->availability()->search($criteria)) {
       typescript: `import { BookingCreate } from '@carhire/nodejs-sdk';
 
 // Create booking from availability offer
+// Note: supplier_id is not required - backend resolves source_id from agreement_ref
 const booking = BookingCreate.fromOffer({
   agreement_ref: 'AGR-001',
-  supplier_id: 'SRC-AVIS',
   offer_id: 'off_123',
   driver: {
     firstName: 'Ali',
@@ -276,9 +279,9 @@ await client.getBooking().cancel(
       javascript: `import { BookingCreate } from '@carhire/nodejs-sdk';
 
 // Create booking from offer
+// Note: supplier_id is not required - backend resolves source_id from agreement_ref
 const booking = BookingCreate.fromOffer({
   agreement_ref: 'AGR-001',
-  supplier_id: 'SRC-AVIS',
   offer_id: 'off_123',
 });
 
@@ -290,9 +293,9 @@ await client.getBooking().modify(result.supplierBookingRef, { driver: { email: '
 await client.getBooking().check(result.supplierBookingRef, 'AGR-001');
 await client.getBooking().cancel(result.supplierBookingRef, 'AGR-001');`,
       go: `// Create booking from availability offer
+// Note: SupplierID is not required - backend resolves source_id from agreement_ref
 booking := &sdk.BookingCreate{
     AgreementRef: "AGR-001",
-    SupplierID: "SRC-AVIS",
     OfferID: "off_123",
     Driver: &sdk.Driver{
         FirstName: "Ali",
@@ -332,9 +335,9 @@ if err != nil {
       php: `use HMS\\CarHire\\DTO\\BookingCreate;
 
 // Create booking from offer
+// Note: supplier_id is not required - backend resolves source_id from agreement_ref
 $booking = BookingCreate::fromOffer([
     'agreement_ref' => 'AGR-001',
-    'supplier_id' => 'SRC-AVIS',
     'offer_id' => 'off_123',
     'driver' => [
         'firstName' => 'Ali',
@@ -364,9 +367,9 @@ $client->booking()->cancel($result['supplierBookingRef'], 'AGR-001');`,
       python: `from carhire import BookingCreate
 
 # Create booking from availability offer
+# Note: supplier_id is not required - backend resolves source_id from agreement_ref
 booking = BookingCreate.from_offer({
     "agreement_ref": "AGR-001",
-    "supplier_id": "SRC-AVIS",
     "offer_id": "off_123",
     "driver": {
         "firstName": "Ali",
@@ -394,9 +397,9 @@ status = await client.get_booking().check(result["supplierBookingRef"], "AGR-001
 # Cancel booking
 await client.get_booking().cancel(result["supplierBookingRef"], "AGR-001")`,
       java: `// Create booking from availability offer
+// Note: supplier_id is not required - backend resolves source_id from agreement_ref
 Map<String, Object> booking = new HashMap<>();
 booking.put("agreement_ref", "AGR-001");
-booking.put("supplier_id", "SRC-AVIS");
 booking.put("offer_id", "off_123");
 
 Map<String, Object> driver = new HashMap<>();
@@ -433,9 +436,9 @@ client.getBooking().cancel(
     null
 ).join();`,
       perl: `# Create booking from availability offer
+# Note: supplier_id is not required - backend resolves source_id from agreement_ref
 my $booking = {
     agreement_ref => 'AGR-001',
-    supplier_id   => 'SRC-AVIS',
     offer_id      => 'off_123',
     driver => {
         firstName => 'Ali',
@@ -770,9 +773,9 @@ for await (const chunk of client.getAvailability().search(criteria)) {
 }
 
 // Create booking
+// Note: supplier_id is not required - backend resolves source_id from agreement_ref
 const booking = BookingCreate.fromOffer({
   agreement_ref: 'AGR-001',
-  supplier_id: 'SRC-AVIS',
   offer_id: 'off_123',
   driver: {
     firstName: 'Ali',
@@ -813,9 +816,9 @@ for await (const chunk of client.getAvailability().search(criteria)) {
 }
 
 // Create booking
+// Note: supplier_id is not required - backend resolves source_id from agreement_ref
 const booking = BookingCreate.fromOffer({
   agreement_ref: 'AGR-001',
-  supplier_id: 'SRC-AVIS',
   offer_id: 'off_123',
 });
 
@@ -825,6 +828,7 @@ const result = await client.getBooking().create(booking, 'idem-123');`,
 import (
     "context"
     "fmt"
+    "log"
     "time"
     "github.com/carhire/go-sdk"
 )
@@ -843,8 +847,8 @@ func main() {
     client := sdk.NewClient(config)
     ctx := context.Background()
     
-    // Search availability
-    criteria := sdk.MakeAvailabilityCriteria(
+    // Search availability (with validation)
+    criteria, err := sdk.MakeAvailabilityCriteria(
         "PKKHI",
         "PKLHE",
         time.Date(2025, 11, 3, 10, 0, 0, 0, time.UTC),
@@ -853,6 +857,9 @@ func main() {
         "USD",
         []string{"AGR-001"},
     )
+    if err != nil {
+        log.Fatal(err)
+    }
     
     resultChan, err := client.Availability().Search(ctx, criteria)
     if err != nil {
@@ -875,9 +882,9 @@ func main() {
     }
     
     // Create booking
+    // Note: SupplierID is not required - backend resolves source_id from agreement_ref
     booking := &sdk.BookingCreate{
         AgreementRef: "AGR-001",
-        SupplierID: "SRC-AVIS",
         OfferID: "off_123",
         Driver: &sdk.Driver{
             FirstName: "Ali",
@@ -934,7 +941,7 @@ foreach ($client->availability()->search($criteria) as $chunk) {
 // Create booking
 $booking = BookingCreate::fromOffer([
     'agreement_ref' => 'AGR-001',
-    'supplier_id' => 'SRC-AVIS',
+    // supplier_id is not required - backend resolves source_id from agreement_ref
     'offer_id' => 'off_123',
     'driver' => [
         'firstName' => 'Ali',
@@ -960,40 +967,44 @@ config = Config.for_rest({
     "longPollWaitMs": 10000,
 })
 
-client = CarHireClient(config)
+# The client uses async HTTP (httpx) for non-blocking requests
+# Use async context manager for proper cleanup, or call aclose() manually
+async with CarHireClient(config) as client:
 
-# Search availability
-criteria = AvailabilityCriteria.make(
-    pickup_locode="PKKHI",
-    return_locode="PKLHE",
-    pickup_at=datetime.fromisoformat("2025-11-03T10:00:00Z"),
-    return_at=datetime.fromisoformat("2025-11-05T10:00:00Z"),
-    driver_age=28,
-    currency="USD",
-    agreement_refs=["AGR-001"],
-)
+    # Search availability
+    criteria = AvailabilityCriteria.make(
+        pickup_locode="PKKHI",
+        return_locode="PKLHE",
+        pickup_at=datetime.fromisoformat("2025-11-03T10:00:00Z"),
+        return_at=datetime.fromisoformat("2025-11-05T10:00:00Z"),
+        driver_age=28,
+        currency="USD",
+        agreement_refs=["AGR-001"],
+    )
 
-async for chunk in client.get_availability().search(criteria):
-    print(f"[{chunk.status}] items={len(chunk.items)} cursor={chunk.cursor or 0}")
-    if chunk.status == "COMPLETE":
-        break
+    async for chunk in client.get_availability().search(criteria):
+        print(f"[{chunk.status}] items={len(chunk.items)} cursor={chunk.cursor or 0}")
+        if chunk.status == "COMPLETE":
+            break
 
-# Create booking
-booking = BookingCreate.from_offer({
-    "agreement_ref": "AGR-001",
-    "supplier_id": "SRC-AVIS",
-    "offer_id": "off_123",
-    "driver": {
-        "firstName": "Ali",
-        "lastName": "Raza",
-        "email": "ali@example.com",
-        "phone": "+92...",
-        "age": 28,
-    },
-})
+    # Create booking
+    # Note: supplier_id is not required - backend resolves source_id from agreement_ref
+    booking = BookingCreate.from_offer({
+        "agreement_ref": "AGR-001",
+        "offer_id": "off_123",
+        "driver": {
+            "firstName": "Ali",
+            "lastName": "Raza",
+            "email": "ali@example.com",
+            "phone": "+92...",
+            "age": 28,
+        },
+    })
 
-result = await client.get_booking().create(booking, "idem-123")
-print(result["supplierBookingRef"])`,
+    result = await client.get_booking().create(booking, "idem-123")
+    print(result["supplierBookingRef"])
+
+# Client automatically closes HTTP connections when exiting context`,
       java: `import com.carhire.sdk.*;
 import java.util.*;
 
@@ -1030,7 +1041,7 @@ client.getAvailability().search(criteria).forEach(chunkFuture -> {
 // Create booking
 Map<String, Object> booking = new HashMap<>();
 booking.put("agreement_ref", "AGR-001");
-booking.put("supplier_id", "SRC-AVIS");
+// supplier_id is not required - backend resolves source_id from agreement_ref
 booking.put("offer_id", "off_123");
 
 Map<String, Object> driver = new HashMap<>();
@@ -1074,9 +1085,9 @@ for my $chunk ($client->availability()->search($criteria)) {
 }
 
 # Create booking
+# Note: supplier_id is not required - backend resolves source_id from agreement_ref
 my $booking = {
     agreement_ref => 'AGR-001',
-    supplier_id   => 'SRC-AVIS',
     offer_id      => 'off_123',
     driver => {
         firstName => 'Ali',

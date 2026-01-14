@@ -113,8 +113,17 @@ export default function LoginPage() {
               </div>
               
               <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-xs text-slate-700 hover:text-slate-800 transition-colors underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <Input
-                  label="Password"
                   type="password"
                   autoComplete="current-password"
                   placeholder="Enter your password"

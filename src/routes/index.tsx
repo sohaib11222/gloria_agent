@@ -7,6 +7,7 @@ import { Shell } from '../components/layout/Shell'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
 import VerifyEmailPage from '../pages/VerifyEmailPage'
+import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import AgentPage from '../pages/AgentPage'
 import AvailabilityTest from '../pages/AvailabilityTest'
 import Agreements from '../pages/Agreements'
@@ -23,6 +24,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       
       {/* Fullscreen docs route (no sidebar) */}
       <Route path="/docs-fullscreen/:endpointId" element={<DocsFullscreen />} />
