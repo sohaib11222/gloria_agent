@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import SdkGuide from '../components/docs/SdkGuide';
 import GettingStartedGuide from '../components/docs/GettingStartedGuide';
@@ -42,8 +42,9 @@ const METHOD_COLORS: Record<string, string> = {
 };
 
 const DocsFullscreen: React.FC = () => {
-  const { endpointId, view } = useParams<{ endpointId?: string; view?: string }>();
+  const { endpointId } = useParams<{ endpointId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [categories, setCategories] = useState<DocCategory[]>([]);
   
   // Safe setter that always ensures categories is an array
@@ -61,10 +62,16 @@ const DocsFullscreen: React.FC = () => {
   
   const [selectedEndpoint, setSelectedEndpoint] = useState<DocEndpoint | null>(null);
   const [activeCode, setActiveCode] = useState<string>('curl');
+  
+  // Determine view from pathname
+  const pathname = location.pathname;
+  const isGettingStarted = pathname === '/docs-fullscreen/getting-started' || pathname === '/docs-fullscreen';
+  const isSdkGuide = pathname === '/docs-fullscreen/sdk';
+  
   // Default to "Getting Started" if no view or endpointId specified
-  const [showSdkGuide, setShowSdkGuide] = useState<boolean>(view === 'sdk');
+  const [showSdkGuide, setShowSdkGuide] = useState<boolean>(isSdkGuide);
   const [showGettingStarted, setShowGettingStarted] = useState<boolean>(
-    view === 'getting-started' || (!view && !endpointId)
+    isGettingStarted || (!endpointId && !isSdkGuide)
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<any>(null);
@@ -96,10 +103,15 @@ const DocsFullscreen: React.FC = () => {
           setShowGettingStarted(false);
           setShowSdkGuide(false);
         }
-      } else if (!view && !endpointId) {
-        // Default to Getting Started when no view or endpoint specified
+      } else if (isGettingStarted) {
+        // Show Getting Started when pathname is /docs-fullscreen/getting-started or /docs-fullscreen
         setShowGettingStarted(true);
         setShowSdkGuide(false);
+        setSelectedEndpoint(null);
+      } else if (isSdkGuide) {
+        // Show SDK Guide when pathname is /docs-fullscreen/sdk
+        setShowSdkGuide(true);
+        setShowGettingStarted(false);
         setSelectedEndpoint(null);
       }
       setIsLoading(false);
@@ -109,7 +121,7 @@ const DocsFullscreen: React.FC = () => {
       setCategoriesSafe([]); // Ensure categories is always an array on error
       setIsLoading(false);
     });
-  }, [endpointId, view]);
+  }, [endpointId, pathname, isGettingStarted, isSdkGuide]);
 
   return (
     <div className="docs-fullscreen">

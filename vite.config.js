@@ -21,5 +21,22 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       exclude: [], // Don't exclude SDK, let Vite handle it
     },
+    server: {
+      proxy: {
+        // Proxy specific /docs API endpoints only (agent, source, admin)
+        // This avoids intercepting /docs-fullscreen routes
+        '^/docs/(agent|source|admin|proto)': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path, // Keep the path as-is
+        },
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
   }
 })

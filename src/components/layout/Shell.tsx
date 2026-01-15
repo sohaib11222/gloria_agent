@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { LogOut, Bell, Menu, X, LayoutDashboard, Search, FileText, Calendar, MapPin, BookOpen, MessageCircle } from 'lucide-react'
 import { NotificationsDrawer } from '../NotificationsDrawer'
@@ -120,11 +120,9 @@ export const Shell: React.FC = () => {
             const Icon = item.icon
             if (item.path === '/docs') {
               return (
-                <a
+                <Link
                   key={item.path}
-                  href="/docs-fullscreen"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  to="/docs-fullscreen/getting-started"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-between px-3 py-3 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900 group"
                 >
@@ -133,9 +131,9 @@ export const Shell: React.FC = () => {
                     <span>{item.label}</span>
                   </div>
                   <svg className="h-4 w-4 text-gray-400 group-hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </a>
+                </Link>
               )
             }
             return (

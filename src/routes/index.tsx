@@ -27,6 +27,8 @@ export const AppRoutes: React.FC = () => {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       
       {/* Fullscreen docs route (no sidebar) */}
+      <Route path="/docs-fullscreen/getting-started" element={<DocsFullscreen />} />
+      <Route path="/docs-fullscreen/sdk" element={<DocsFullscreen />} />
       <Route path="/docs-fullscreen/:endpointId" element={<DocsFullscreen />} />
       <Route path="/docs-fullscreen" element={<DocsFullscreen />} />
       
