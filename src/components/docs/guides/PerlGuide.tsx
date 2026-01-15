@@ -341,13 +341,13 @@ perl examples/test_availability.pl`}
             <div style={{ marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#111827' }}>Hash References</h3>
               <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>
-                Use hash references (<code style={{ backgroundColor: '#f3f4f6', padding: '0.125rem 0.25rem', borderRadius: '0.25rem' }}>{}</code>) for nested data structures. Access nested values with <code style={{ backgroundColor: '#f3f4f6', padding: '0.125rem 0.25rem', borderRadius: '0.25rem' }}>$hash-&gt;{'{key}'}-&gt;{'{nested}'}</code>.
+                Use hash references (<code style={{ backgroundColor: '#f3f4f6', padding: '0.125rem 0.25rem', borderRadius: '0.25rem' }}>{}</code>) for nested data structures. Access nested values with <code style={{ backgroundColor: '#f3f4f6', padding: '0.125rem 0.25rem', borderRadius: '0.25rem' }}>{'$hash->{key}->{nested}'}</code>.
               </p>
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.75rem', color: '#111827' }}>Generator Patterns</h3>
               <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>
-                The SDK uses generator patterns for streaming results. Use <code style={{ backgroundColor: '#f3f4f6', padding: '0.125rem 0.25rem', borderRadius: '0.25rem' }}>for my $chunk ($client-&gt;availability()-&gt;search($criteria))</code> to iterate.
+                The SDK uses generator patterns for streaming results. Use <code style={{ backgroundColor: '#f3f4f6', padding: '0.125rem 0.25rem', borderRadius: '0.25rem' }}>{'for my $chunk ($client->availability()->search($criteria))'}</code> to iterate.
               </p>
             </div>
           </div>
