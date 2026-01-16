@@ -32,9 +32,13 @@ export class HttpClient {
     // Get token from localStorage for auth (always read fresh to avoid stale tokens)
     const token = localStorage.getItem('token')
     
-    // Start with default headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+    // Check if body is FormData - if so, don't set Content-Type (browser will set it with boundary)
+    const isFormData = fetchOptions.body instanceof FormData
+    
+    // Start with default headers (skip Content-Type for FormData)
+    const headers: Record<string, string> = {}
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json'
     }
     
     // Add provided headers (convert to plain object if needed)
@@ -42,16 +46,28 @@ export class HttpClient {
       if (providedHeaders instanceof Headers) {
         // Convert Headers object to plain object
         providedHeaders.forEach((value, key) => {
-          headers[key] = value
+          // Don't override Content-Type for FormData - browser needs to set it
+          if (!(isFormData && key.toLowerCase() === 'content-type')) {
+            headers[key] = value
+          }
         })
       } else if (Array.isArray(providedHeaders)) {
         // Convert array of [key, value] pairs to object
         providedHeaders.forEach(([key, value]) => {
-          headers[key] = value
+          // Don't override Content-Type for FormData - browser needs to set it
+          if (!(isFormData && key.toLowerCase() === 'content-type')) {
+            headers[key] = value
+          }
         })
       } else {
         // Already a plain object - merge it
-        Object.assign(headers, providedHeaders as Record<string, string>)
+        const providedHeadersObj = providedHeaders as Record<string, string>
+        Object.keys(providedHeadersObj).forEach(key => {
+          // Don't override Content-Type for FormData - browser needs to set it
+          if (!(isFormData && key.toLowerCase() === 'content-type')) {
+            headers[key] = providedHeadersObj[key]
+          }
+        })
       }
     }
     
@@ -89,6 +105,39 @@ export class HttpClient {
       // Also ensure we don't include headers in fetchOptions to avoid conflicts
       const { headers: _, ...restFetchOptions } = fetchOptions as any
       
+      // Debug logging for FormData requests
+      if (isFormData) {
+        // Log FormData entries if possible
+        const formDataEntries: any[] = [];
+        if (restFetchOptions.body instanceof FormData) {
+          try {
+            for (const [key, value] of restFetchOptions.body.entries()) {
+              formDataEntries.push({
+                key,
+                valueType: value instanceof File ? 'File' : typeof value,
+                valuePreview: value instanceof File 
+                  ? `${value.name} (${value.size} bytes, ${value.type})` 
+                  : String(value).substring(0, 100),
+              });
+            }
+          } catch (e) {
+            formDataEntries.push({ error: 'Could not iterate FormData entries' });
+          }
+        }
+        
+        console.log('[HttpClient] FormData request:', {
+          endpoint,
+          url,
+          hasBody: !!restFetchOptions.body,
+          bodyType: restFetchOptions.body?.constructor?.name,
+          isFormDataInstance: restFetchOptions.body instanceof FormData,
+          headers: Object.keys(headers),
+          hasAuth: !!headers['Authorization'],
+          contentType: headers['Content-Type'] || 'auto-set-by-browser',
+          formDataEntries,
+        })
+      }
+      
       const fetchConfig: RequestInit = {
         ...restFetchOptions,
         method: restFetchOptions.method || 'GET',
@@ -104,6 +153,35 @@ export class HttpClient {
           hasAuthorization: finalHeaders?.['Authorization'] || finalHeaders?.get?.('Authorization') ? 'YES' : 'NO',
           authorizationValue: finalHeaders?.['Authorization']?.substring(0, 30) || 'N/A'
         })
+      }
+      
+      // Final check for FormData before sending
+      if (isFormData && fetchConfig.body instanceof FormData) {
+        console.log('[HttpClient] About to send FormData via fetch:', {
+          url,
+          method: fetchConfig.method,
+          hasBody: !!fetchConfig.body,
+          bodyType: fetchConfig.body.constructor.name,
+          headers: Object.keys(fetchConfig.headers as any || {}),
+          contentType: (fetchConfig.headers as any)?.['Content-Type'] || 'auto-set',
+        });
+        
+        // Try to log FormData entries (may not work in all browsers)
+        try {
+          const entries: any[] = [];
+          for (const [key, value] of (fetchConfig.body as FormData).entries()) {
+            entries.push({
+              key,
+              valueType: value instanceof File ? 'File' : typeof value,
+              valuePreview: value instanceof File 
+                ? `${value.name} (${value.size} bytes, ${value.type})` 
+                : String(value).substring(0, 100),
+            });
+          }
+          console.log('[HttpClient] FormData entries:', entries);
+        } catch (e) {
+          console.log('[HttpClient] Could not iterate FormData entries:', e);
+        }
       }
       
       const response = await fetch(url, fetchConfig)
@@ -211,10 +289,14 @@ export class HttpClient {
   }
 
   async post<T = any>(endpoint: string, data?: any, options?: HttpOptions): Promise<T> {
+    // Check if data is FormData - if so, send it as-is without stringifying
+    const isFormData = data instanceof FormData
+    
+    // If FormData, pass it directly in options so request method can detect it
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
     })
   }
 
@@ -239,4 +321,4 @@ export class HttpClient {
   }
 }
 
-export const httpClient = new HttpClient()
+export const httpClient = new HttpClient(API_BASE_URL)

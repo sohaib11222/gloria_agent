@@ -29,6 +29,20 @@ interface AvailabilityOffer {
 interface SubmitResp { request_id: string; recommended_poll_ms: number; status: string }
 interface PollResp { request_id: string; status: string; last_seq: number; offers: AvailabilityOffer[]; complete: boolean; error?: string }
 
+interface SavedSearch {
+  id: string
+  pickup: string
+  dropoff: string
+  pickupDate: string
+  returnDate: string
+  driverAge: string
+  agreementRef: string
+  pickupLocationName?: string
+  dropoffLocationName?: string
+  createdAt: number
+  lastRunAt: number
+}
+
 export default function AvailabilityTest() {
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
@@ -60,6 +74,132 @@ export default function AvailabilityTest() {
   const [isPolling, setIsPolling] = useState(false)
   const [pollStatus, setPollStatus] = useState('')
   const [timedOutSources, setTimedOutSources] = useState<number>(0)
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
+
+  // Load saved searches from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('availability_saved_searches')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setSavedSearches(Array.isArray(parsed) ? parsed : [])
+      }
+    } catch (error) {
+      console.error('Failed to load saved searches:', error)
+    }
+  }, [])
+
+  // Save search to localStorage when submitted
+  const saveSearchToHistory = (searchParams: {
+    pickup: string
+    dropoff: string
+    pickupDate: string
+    returnDate: string
+    driverAge: string
+    agreementRef: string
+  }) => {
+    try {
+      // Get location names for display
+      const pickupLoc = locationsData?.find(l => l.unlocode === searchParams.pickup)
+      const dropoffLoc = locationsData?.find(l => l.unlocode === searchParams.dropoff)
+      
+      const newSearch: SavedSearch = {
+        id: Date.now().toString(),
+        ...searchParams,
+        pickupLocationName: pickupLoc ? `${pickupLoc.place || pickupLoc.name || ''}, ${pickupLoc.country}` : undefined,
+        dropoffLocationName: dropoffLoc ? `${dropoffLoc.place || dropoffLoc.name || ''}, ${dropoffLoc.country}` : undefined,
+        createdAt: Date.now(),
+        lastRunAt: Date.now(),
+      }
+
+      // Get existing searches
+      const existing = savedSearches.length > 0 
+        ? savedSearches 
+        : (() => {
+            try {
+              const saved = localStorage.getItem('availability_saved_searches')
+              return saved ? JSON.parse(saved) : []
+            } catch {
+              return []
+            }
+          })()
+
+      // Check if similar search exists (same pickup, dropoff, dates)
+      const similarIndex = existing.findIndex((s: SavedSearch) => 
+        s.pickup === newSearch.pickup &&
+        s.dropoff === newSearch.dropoff &&
+        s.pickupDate === newSearch.pickupDate &&
+        s.returnDate === newSearch.returnDate
+      )
+
+      if (similarIndex >= 0) {
+        // Update existing search
+        existing[similarIndex] = { ...existing[similarIndex], lastRunAt: Date.now() }
+      } else {
+        // Add new search (keep only last 10)
+        existing.unshift(newSearch)
+        if (existing.length > 10) {
+          existing.pop()
+        }
+      }
+
+      // Sort by lastRunAt (most recent first)
+      existing.sort((a: SavedSearch, b: SavedSearch) => b.lastRunAt - a.lastRunAt)
+
+      setSavedSearches(existing)
+      localStorage.setItem('availability_saved_searches', JSON.stringify(existing))
+    } catch (error) {
+      console.error('Failed to save search:', error)
+    }
+  }
+
+  // Load a saved search into the form
+  const loadSavedSearch = (search: SavedSearch) => {
+    setPickup(search.pickup)
+    setDropoff(search.dropoff)
+    setPickupDate(search.pickupDate)
+    setReturnDate(search.returnDate)
+    setDriverAge(search.driverAge)
+    setAgreementRef(search.agreementRef)
+    
+    // Update location search to show the location names
+    if (search.pickupLocationName) {
+      setLocationSearch(prev => ({ ...prev, pickup: search.pickup }))
+    }
+    if (search.dropoffLocationName) {
+      setLocationSearch(prev => ({ ...prev, dropoff: search.dropoff }))
+    }
+  }
+
+  // Delete a saved search
+  const deleteSavedSearch = (id: string) => {
+    const updated = savedSearches.filter(s => s.id !== id)
+    setSavedSearches(updated)
+    localStorage.setItem('availability_saved_searches', JSON.stringify(updated))
+  }
+
+  // Format time ago
+  const formatTimeAgo = (timestamp: number): string => {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000)
+    if (seconds < 60) return `${seconds}s ago`
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    if (days === 1) return 'Yesterday'
+    return `${days} days ago`
+  }
+
+  // Calculate rental days
+  const calculateDays = (pickupDate: string, returnDate: string): number => {
+    if (!pickupDate || !returnDate) return 0
+    const pickup = new Date(pickupDate)
+    const return_ = new Date(returnDate)
+    const diffTime = Math.abs(return_.getTime() - pickup.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -82,6 +222,16 @@ export default function AvailabilityTest() {
       setIsPolling(true)
       setPollStatus('PENDING')
       showToast.success('Availability request submitted')
+      
+      // Save search to history
+      saveSearchToHistory({
+        pickup,
+        dropoff,
+        pickupDate,
+        returnDate,
+        driverAge,
+        agreementRef,
+      })
     },
     onError: (e: any) => {
       const errorMessage = e?.response?.data?.message || e?.message || 'Failed to submit availability'
@@ -447,33 +597,78 @@ export default function AvailabilityTest() {
               <p className="text-slate-200 text-sm mt-1">Quick access to recent searches</p>
             </CardHeader>
             <CardContent className="p-5">
-              <div className="space-y-3">
-                <div className="p-4 bg-white rounded-md border border-gray-200 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-bold text-gray-900">Manchester → Glasgow</p>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <p className="text-xs text-gray-600 font-medium">7 days rental</p>
-                  <p className="text-xs text-gray-400 mt-1">Last run: 2h ago</p>
+              {savedSearches.length > 0 ? (
+                <div className="space-y-3">
+                  {savedSearches.map((search) => {
+                    const pickupName = search.pickupLocationName || search.pickup
+                    const dropoffName = search.dropoffLocationName || search.dropoff
+                    const days = calculateDays(search.pickupDate, search.returnDate)
+                    
+                    return (
+                      <div
+                        key={search.id}
+                        className="p-4 bg-white rounded-md border border-gray-200 hover:bg-gray-50 transition-colors group"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 cursor-pointer" onClick={() => {
+                            loadSavedSearch(search)
+                            showToast.success('Search loaded. Click "Search Availability" to run it.')
+                          }}>
+                            <p className="text-sm font-bold text-gray-900">
+                              {pickupName} → {dropoffName}
+                            </p>
+                            {days > 0 && (
+                              <p className="text-xs text-gray-600 font-medium mt-1">
+                                {days} day{days !== 1 ? 's' : ''} rental
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1">
+                              Last run: {formatTimeAgo(search.lastRunAt)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                loadSavedSearch(search)
+                                // Trigger form submission after a brief delay to ensure form is updated
+                                setTimeout(() => {
+                                  submit.mutate()
+                                }, 100)
+                              }}
+                              className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                              title="Run this search"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm('Delete this saved search?')) {
+                                  deleteSavedSearch(search.id)
+                                }
+                              }}
+                              className="p-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                              title="Delete this search"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div className="p-4 bg-white rounded-md border border-gray-200 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-bold text-gray-900">London Heathrow → Edinburgh</p>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <p className="text-xs text-gray-600 font-medium">3 days rental</p>
-                  <p className="text-xs text-gray-400 mt-1">Last run: Yesterday</p>
+              ) : (
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-md text-center">
+                  <p className="text-xs text-gray-600">
+                    No saved searches yet. Your recent searches will appear here automatically.
+                  </p>
                 </div>
-              </div>
-              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md text-center">
-                <p className="text-xs text-gray-700 font-medium">
-                  Coming soon: Save searches locally and re-run them
-                </p>
-              </div>
+              )}
             </CardContent>
           </Card>
 
