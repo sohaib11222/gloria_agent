@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -75,6 +75,9 @@ export default function AvailabilityTest() {
   const [pollStatus, setPollStatus] = useState('')
   const [timedOutSources, setTimedOutSources] = useState<number>(0)
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([])
+  const [lastSeq, setLastSeq] = useState<number>(0)
+  const lastSeqRef = useRef<number>(0)
+  const requestIdRef = useRef<string | null>(null)
 
   // Load saved searches from localStorage
   useEffect(() => {
@@ -215,13 +218,30 @@ export default function AvailabilityTest() {
       return data
     },
     onSuccess: (data) => {
-      setRequestId(data.request_id)
+      console.log('✅ Submit success:', data)
+      // Handle both snake_case and PascalCase response formats
+      const newRequestId = data.request_id || data.RequestId || (data as any).requestId
+      if (!newRequestId) {
+        console.error('❌ No request_id in response:', data)
+        showToast.error('Failed to get request ID from server')
+        return
+      }
+      console.log('📝 Extracted requestId:', newRequestId)
+      setRequestId(newRequestId)
+      requestIdRef.current = newRequestId // Update ref immediately
       setOffers([])
+      setLastSeq(0) // Reset sequence when starting new search
+      lastSeqRef.current = 0 // Also reset ref
       setTimedOutSources(0)
       setTotalExpected((data as any)?.total_expected ?? null)
-      setIsPolling(true)
       setPollStatus('PENDING')
       showToast.success('Availability request submitted')
+      
+      // Start polling immediately (don't wait for useEffect)
+      setIsPolling(true)
+      console.log('🚀 Starting first poll immediately:', { requestId: newRequestId, sinceSeq: 0 })
+      // Pass requestId directly to avoid closure issue
+      poll.mutate({ sinceSeq: 0, requestId: newRequestId })
       
       // Save search to history
       saveSearchToHistory({
@@ -240,20 +260,67 @@ export default function AvailabilityTest() {
   })
 
   const poll = useMutation({
-    mutationFn: async ({ sinceSeq }: { sinceSeq: number }) => {
-      const params: any = { requestId: requestId!, sinceSeq, waitMs: 1500 }
+    mutationFn: async ({ sinceSeq, requestId: pollRequestId }: { sinceSeq: number; requestId?: string | null }) => {
+      // Use provided requestId or fall back to ref/state
+      const currentRequestId = pollRequestId || requestIdRef.current || requestId
+      if (!currentRequestId) {
+        throw new Error('No request ID available for polling')
+      }
+      const params: any = { requestId: currentRequestId, sinceSeq, waitMs: 1500 }
+      console.log('🔄 Polling availability:', { requestId: currentRequestId, sinceSeq, params })
       const { data } = await api.get<PollResp>('/availability/poll', { params })
+      console.log('✅ Poll response:', data)
       return data
     },
     onSuccess: (data) => {
+      // Handle both snake_case and PascalCase response formats
+      const lastSeq = data.last_seq || data.LastSeq || (data as any).lastSeq
+      const status = data.status || data.Status || 'IN_PROGRESS'
+      const complete = data.complete !== undefined ? data.complete : (data.Complete !== undefined ? data.Complete : false)
+      
+      console.log('📦 Processing poll response:', {
+        offersCount: Array.isArray(data.offers) ? data.offers.length : 0,
+        last_seq: lastSeq,
+        status: status,
+        complete: complete
+      })
+      
       if (Array.isArray(data.offers) && data.offers.length) {
-        setOffers(prev => prev.concat(data.offers))
+        console.log('➕ Adding offers:', data.offers.length)
+        // Normalize offer fields (handle both snake_case and PascalCase)
+        const normalizedOffers = data.offers.map((offer: any) => ({
+          supplier_offer_ref: offer.supplier_offer_ref || offer.supplierOfferRef || offer.SupplierOfferRef || '',
+          source_id: offer.source_id || offer.sourceId || offer.SourceId || '',
+          agreement_ref: offer.agreement_ref || offer.agreementRef || offer.AgreementRef || '',
+          pickup_location: offer.pickup_location || offer.pickupLocation || offer.PickupLocation || '',
+          dropoff_location: offer.dropoff_location || offer.dropoffLocation || offer.DropoffLocation || '',
+          vehicle_class: offer.vehicle_class || offer.vehicleClass || offer.VehicleClass || '',
+          vehicle_make_model: offer.vehicle_make_model || offer.vehicleMakeModel || offer.VehicleMakeModel || '',
+          rate_plan_code: offer.rate_plan_code || offer.ratePlanCode || offer.RatePlanCode || '',
+          total_price: offer.total_price ?? offer.totalPrice ?? offer.TotalPrice ?? 0,
+          currency: offer.currency || offer.Currency || 'USD',
+          availability_status: offer.availability_status || offer.availabilityStatus || offer.AvailabilityStatus || 'UNKNOWN',
+          supplier_name: offer.supplier_name || offer.supplierName || offer.SupplierName || '',
+        }))
+        setOffers(prev => {
+          const newOffers = prev.concat(normalizedOffers)
+          console.log('📊 Total offers now:', newOffers.length)
+          return newOffers
+        })
       }
-      setPollStatus(data.status)
-      if ((data as any)?.timed_out_sources != null) {
-        setTimedOutSources((data as any).timed_out_sources)
+      // Update last_seq for next poll
+      if (lastSeq != null) {
+        const seqNum = typeof lastSeq === 'string' ? parseInt(lastSeq, 10) : lastSeq
+        setLastSeq(seqNum)
+        lastSeqRef.current = seqNum // Also update ref
+        console.log('📝 Updated last_seq to:', seqNum)
       }
-      if (data.complete || data.status === 'COMPLETE') {
+      setPollStatus(status)
+      if ((data as any)?.timed_out_sources != null || (data as any)?.TimedOutSources != null) {
+        setTimedOutSources((data as any).timed_out_sources || (data as any).TimedOutSources || 0)
+      }
+      if (complete || status === 'COMPLETE') {
+        console.log('✅ Polling complete, stopping')
         setIsPolling(false)
       }
     },
@@ -265,13 +332,228 @@ export default function AvailabilityTest() {
     }
   })
 
+  const createBooking = useMutation({
+    mutationFn: async (offer: AvailabilityOffer) => {
+      // Validate required fields
+      if (!offer.agreement_ref) {
+        throw new Error('Missing agreement_ref in offer')
+      }
+      if (!offer.supplier_offer_ref) {
+        throw new Error('Missing supplier_offer_ref in offer. Cannot create booking without a valid offer reference.')
+      }
+      
+      const idempotencyKey = `booking-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      const payload: any = {
+        agreement_ref: offer.agreement_ref,
+        supplier_offer_ref: offer.supplier_offer_ref,
+        availability_request_id: requestId || requestIdRef.current || undefined,
+        pickup_unlocode: pickup,
+        dropoff_unlocode: dropoff,
+        pickup_iso: new Date(pickupDate).toISOString(),
+        dropoff_iso: new Date(returnDate).toISOString(),
+        vehicle_class: offer.vehicle_class,
+        vehicle_make_model: offer.vehicle_make_model,
+        rate_plan_code: offer.rate_plan_code,
+        driver_age: driverAge ? Number(driverAge) : undefined,
+      }
+      
+      console.log('📋 Booking payload prepared:', {
+        agreement_ref: payload.agreement_ref,
+        supplier_offer_ref: payload.supplier_offer_ref,
+        idempotencyKey,
+        hasAllRequired: !!(payload.agreement_ref && payload.supplier_offer_ref && idempotencyKey)
+      })
+      
+      // Use simple direct fetch call with token - bypass complex HTTP client
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No authentication token. Please log in again.')
+      }
+      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+      const url = `${API_BASE_URL}/bookings`
+      
+      console.log('🚀 Direct fetch booking request:', {
+        url,
+        hasToken: !!token,
+        tokenPreview: token.substring(0, 20) + '...',
+        payload,
+        idempotencyKey
+      })
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Idempotency-Key': idempotencyKey
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }))
+        const error = new Error(errorData.message || `HTTP ${response.status}`) as any
+        error.status = response.status
+        error.response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        }
+        throw error
+      }
+      
+      const data = await response.json()
+      return data
+    },
+    onSuccess: (data) => {
+      console.log('✅ Booking created:', data)
+      showToast.success('Booking created successfully!')
+      // Optionally navigate to bookings page or show booking details
+    },
+    onError: (error: any) => {
+      // Check sessionStorage for error info (in case page was reloaded)
+      try {
+        const lastError = sessionStorage.getItem('lastBookingError')
+        if (lastError) {
+          console.log('📋 Last booking error from sessionStorage:', JSON.parse(lastError))
+          sessionStorage.removeItem('lastBookingError')
+        }
+      } catch (e) {
+        // Ignore
+      }
+      
+      console.error('❌ Booking failed:', error)
+      console.error('❌ Booking error details:', {
+        status: error?.response?.status || error?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: error?.message,
+        errorCode: error?.response?.data?.error
+      })
+      
+      // Check if it's an authentication error
+      const isAuthError = error?.response?.status === 401 || 
+                         error?.response?.data?.error === 'AUTH_ERROR'
+      
+      if (isAuthError) {
+        const token = localStorage.getItem('token')
+        console.error('🔐 Auth error - Token status:', {
+          hasToken: !!token,
+          tokenLength: token?.length,
+          tokenPreview: token ? `${token.substring(0, 20)}...` : 'N/A'
+        })
+        
+        // Check if token might be expired
+        if (token) {
+          try {
+            // Try to decode JWT to check expiration (without verification)
+            const payload = JSON.parse(atob(token.split('.')[1]))
+            const exp = payload.exp * 1000 // Convert to milliseconds
+            const now = Date.now()
+            const isExpired = exp < now
+            console.error('🔐 Token expiration check:', {
+              expiresAt: new Date(exp).toISOString(),
+              now: new Date(now).toISOString(),
+              isExpired,
+              expiredMinutesAgo: isExpired ? Math.round((now - exp) / 60000) : 0
+            })
+            
+            if (isExpired) {
+              showToast.error('Your session has expired. Please log in again.')
+              // Don't auto-redirect - let user decide
+              return
+            }
+          } catch (e) {
+            console.error('🔐 Could not decode token:', e)
+          }
+        }
+        
+        showToast.error('Authentication failed. Please check your login and try again.')
+        return
+      }
+      
+      // Don't redirect on auth errors - let user see the error
+      // The error handler in sdkClient should not redirect for booking endpoints
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          error?.message || 
+                          'Failed to create booking'
+      
+      // Show more detailed error if available
+      if (error?.response?.data?.details) {
+        showToast.error(`${errorMessage}: ${error.response.data.details}`)
+      } else if (error?.response?.data?.hint) {
+        showToast.error(`${errorMessage}. ${error.response.data.hint}`)
+      } else {
+        showToast.error(errorMessage)
+      }
+    }
+  })
+
+  const handleBookOffer = (offer: AvailabilityOffer) => {
+    // Validate required fields before booking
+    if (!offer.agreement_ref) {
+      showToast.error('Missing agreement reference in offer')
+      return
+    }
+    
+    // Check if supplier_offer_ref is missing or generated
+    const isGeneratedRef = offer.supplier_offer_ref?.startsWith('GEN-');
+    if (!offer.supplier_offer_ref) {
+      showToast.error('Missing supplier offer reference in offer. Cannot book without a valid offer reference.')
+      console.error('❌ Booking validation failed:', {
+        offer,
+        missingFields: {
+          agreement_ref: !offer.agreement_ref,
+          supplier_offer_ref: !offer.supplier_offer_ref
+        }
+      })
+      return
+    }
+    
+    // Show info if using generated reference
+    if (isGeneratedRef) {
+      console.warn('⚠️ Using generated supplier_offer_ref (source did not provide one):', offer.supplier_offer_ref)
+      showToast.info('Note: Using generated offer reference. Source backend may require a valid reference.')
+    }
+    
+    console.log('✅ Booking validation passed:', {
+      agreement_ref: offer.agreement_ref,
+      supplier_offer_ref: offer.supplier_offer_ref,
+      source_id: offer.source_id,
+      isGeneratedRef
+    })
+    createBooking.mutate(offer)
+  }
+
   useEffect(() => {
-    if (!isPolling || !requestId) return
+    const currentRequestId = requestIdRef.current || requestId
+    if (!isPolling || !currentRequestId) {
+      console.log('⏸️ Polling stopped:', { isPolling, requestId: currentRequestId, requestIdRef: requestIdRef.current })
+      return
+    }
+    
+    console.log('▶️ Setting up polling interval:', { requestId: currentRequestId, initialSeq: lastSeqRef.current })
+    
+    // Set up interval for polling (first poll is already done in onSuccess)
     const interval = setInterval(() => {
-      poll.mutate({ sinceSeq: offers.length })
+      const seq = lastSeqRef.current
+      const reqId = requestIdRef.current || requestId
+      if (!reqId) {
+        console.log('⚠️ No requestId for polling, clearing interval')
+        clearInterval(interval)
+        return
+      }
+      console.log('🔄 Interval poll:', { requestId: reqId, sinceSeq: seq })
+      poll.mutate({ sinceSeq: seq, requestId: reqId })
     }, 1800)
-    return () => clearInterval(interval)
-  }, [isPolling, requestId, offers.length])
+    
+    return () => {
+      console.log('🛑 Clearing polling interval')
+      clearInterval(interval)
+    }
+  }, [isPolling, requestId]) // Only recreate when polling state or requestId changes
 
   const vehicleList = useMemo(() => offers, [offers])
 
@@ -549,15 +831,26 @@ export default function AvailabilityTest() {
                               </div>
                               <div className="text-right ml-4">
                                 <div className="text-2xl font-bold text-gray-900 mb-2">
-                                  {offer.currency} {offer.total_price.toFixed(2)}
+                                  {offer.currency || 'USD'} {(offer.total_price || 0).toFixed(2)}
                                 </div>
                                 <Badge 
                                   variant={offer.availability_status === 'AVAILABLE' ? 'success' : 'warning'} 
                                   size="sm"
-                                  className="font-semibold"
+                                  className="font-semibold mb-2"
                                 >
                                   {offer.availability_status}
                                 </Badge>
+                                {offer.availability_status === 'AVAILABLE' && (
+                                  <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => handleBookOffer(offer)}
+                                    loading={createBooking.isPending}
+                                    className="mt-2 w-full"
+                                  >
+                                    {createBooking.isPending ? 'Booking...' : 'Book Now'}
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </CardContent>
