@@ -58,6 +58,32 @@ export default function LoginPage() {
       
       // Check if user type is AGENT
       if (response.user.company.type === 'AGENT') {
+        // Check approval status
+        if (response.user.company.approvalStatus !== 'APPROVED') {
+          // Clear stored data if not approved
+          localStorage.removeItem('token')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('user')
+          
+          if (response.user.company.approvalStatus === 'PENDING') {
+            toast.error('Your account is pending admin approval. Please wait for approval.')
+          } else if (response.user.company.approvalStatus === 'REJECTED') {
+            toast.error('Your account has been rejected. Please contact support.')
+          } else {
+            toast.error('Your account is not approved. Please contact support.')
+          }
+          return
+        }
+
+        // Check if account is active
+        if (response.user.company.status !== 'ACTIVE') {
+          localStorage.removeItem('token')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('user')
+          toast.error('Your account is not active. Please contact support.')
+          return
+        }
+
         toast.success('Login successful!')
         navigate('/agent')
       } else {
@@ -69,7 +95,31 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error('Login failed:', error)
-      toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.')
+      
+      // Extract error code and message from various possible locations
+      // Priority: response.data.error > response.error > code
+      const errorCode = error.response?.data?.error || 
+                       error.response?.error || 
+                       error.code ||
+                       error.response?.data?.code
+      
+      // Priority: response.data.message > response.message > message
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.message || 
+                          error.message || 
+                          'Login failed. Please check your credentials.'
+      
+      // Always show the proper error message from the backend
+      if (errorCode === 'NOT_APPROVED') {
+        toast.error(errorMessage)
+      } else if (errorCode === 'ACCOUNT_NOT_ACTIVE') {
+        toast.error(errorMessage)
+      } else if (errorCode === 'EMAIL_NOT_VERIFIED') {
+        toast.error(errorMessage)
+      } else {
+        // For any other error, show the message (which should be from backend)
+        toast.error(errorMessage)
+      }
     } finally {
       setIsLoading(false)
     }

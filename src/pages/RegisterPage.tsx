@@ -65,7 +65,7 @@ export default function RegisterPage() {
       // Store email for OTP verification
       localStorage.setItem('pendingEmail', data.email)
       
-      toast.success('Registration successful! Please check your email for verification code.')
+      toast.success('Registration successful! Please check your email for verification code. After verification, your account will be pending admin approval.')
       navigate('/verify-email', { state: { email: data.email } })
     } catch (error: any) {
       console.error('Registration error:', error)
@@ -254,6 +254,11 @@ export default function RegisterPage() {
                       <span className="text-xs text-gray-700">{item.text}</span>
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-xs text-yellow-800 text-center">
+                    <strong>Note:</strong> After email verification, your account will require admin approval before you can access the dashboard.
+                  </p>
                 </div>
               </div>
             </div>

@@ -70,7 +70,7 @@ export default function VerifyEmailPage() {
       // Clear pending email
       localStorage.removeItem('pendingEmail')
       
-      toast.success(response.message || 'Email verified successfully!')
+      toast.success(response.message || 'Email verified successfully! Your account is now pending admin approval.')
       setTimeout(() => navigate('/agent'), 500)
     } catch (error: any) {
       console.error('Email verification failed:', error)

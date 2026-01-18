@@ -74,11 +74,25 @@ class CarHireSDKClient {
         }>('/auth/login', { email, password })
         return response
       } catch (error: any) {
+        // HttpClient sets error.response to the errorData object directly (not error.response.data)
+        // It also sets error.message = errorData.message if it exists
+        // So we need to check error.response.message or error.message
+        const errorMessage = error.response?.message || 
+                            error.message || 
+                            'Login failed'
+        const errorCode = error.response?.error || 
+                         'LOGIN_ERROR'
+        const status = error.status || 500
+        
+        // Preserve the original error response data for proper error handling
+        // Include all fields from error.response (which is the errorData object)
+        const errorDetails = error.response || {}
+        
         throw new SDKError(
-          error.message || 'Login failed',
-          error.status || 500,
-          'LOGIN_ERROR',
-          error
+          errorMessage,
+          status,
+          errorCode,
+          { ...errorDetails, originalError: error }
         )
       }
     },
@@ -221,21 +235,28 @@ function handleError(error: unknown): never {
     }
     
     // Don't show toast for errors that will be handled by the component
-    // Only show toast for unexpected errors
-    if (error.status !== 400 && error.status !== 401) {
+    // Only show toast for unexpected errors (not 400, 401, or 403)
+    // 403 errors should be handled by components to show proper messages
+    if (error.status !== 400 && error.status !== 401 && error.status !== 403) {
       const message = error.message || 'An error occurred'
       toast.error(message)
     }
     
     // Convert SDKError to axios-like error format
+    // Preserve the original error message and include error code
     const axiosError = new Error(error.message || 'An error occurred') as any
+    // Extract error code and message from details if available
+    const errorCode = error.code || error.details?.error
+    const errorMessage = error.message || error.details?.message
     axiosError.response = {
       status: error.status,
-      statusText: error.code || 'Error',
+      statusText: errorCode || 'Error',
       data: {
-        message: error.message,
-        code: error.code,
-        details: error.details,
+        error: errorCode,
+        message: errorMessage,
+        code: errorCode,
+        // Include all fields from details (which contains the original error response)
+        ...(error.details && typeof error.details === 'object' ? error.details : {}),
       },
     }
     axiosError.status = error.status
@@ -307,11 +328,37 @@ export const api = {
     try {
       // Use SDK methods for auth endpoints
       if (url === '/auth/login') {
-        const response = await sdkClient.auth.login(data.email, data.password)
-        // Update token
-        sdkClient.setToken(response.access)
-        localStorage.setItem('token', response.access)
-        return { data: response as T }
+        try {
+          const response = await sdkClient.auth.login(data.email, data.password)
+          // Update token
+          sdkClient.setToken(response.access)
+          localStorage.setItem('token', response.access)
+          return { data: response as T }
+        } catch (loginError: any) {
+          // For login errors, convert SDKError to axios-like format and re-throw
+          // Don't call handleError here - let the login page handle it
+          if (loginError instanceof SDKError) {
+            // Extract message and error code from details if available (preserves original backend response)
+            // The details object contains the original error.response (which is the errorData from backend)
+            const errorMessage = loginError.details?.message || loginError.message
+            const errorCode = loginError.details?.error || loginError.code
+            
+            const axiosError = new Error(errorMessage) as any
+            axiosError.response = {
+              status: loginError.status,
+              statusText: errorCode || 'Error',
+              data: {
+                error: errorCode,
+                message: errorMessage,
+                // Include all fields from details (which contains the original error response from backend)
+                ...(loginError.details && typeof loginError.details === 'object' ? loginError.details : {}),
+              },
+            }
+            axiosError.status = loginError.status
+            throw axiosError
+          }
+          throw loginError
+        }
       }
       
       if (url === '/auth/register') {
