@@ -270,15 +270,30 @@ function handleError(error: unknown): never {
     const loginPath = `${basePath}/login`
     const currentPath = window.location.pathname
     
-    // Don't auto-redirect for booking test endpoints - let components handle the error
-    const isBookingTestError = httpError.response?.config?.url?.includes('/bookings/test/') ||
-                               httpError.message?.includes('/bookings/test/')
+    // Don't auto-redirect for booking endpoints - let components handle the error
+    // Check multiple ways the error might be marked as a booking error
+    const isBookingError = httpError.isBookingError === true ||
+                           httpError.endpoint?.includes('/bookings') ||
+                           httpError.response?.config?.url?.includes('/bookings') ||
+                           httpError.message?.includes('/bookings') ||
+                           (httpError as any).url?.includes('/bookings')
     
-    // Only redirect on 401, and only if not already on login page, and not a booking test endpoint
+    if (isBookingError) {
+      console.log('[handleError] Booking error detected - NOT redirecting:', {
+        isBookingError: httpError.isBookingError,
+        endpoint: httpError.endpoint,
+        status: httpError.status
+      })
+      // Just throw the error - don't redirect or clear token
+      throw error
+    }
+    
+    // Only redirect on 401, and only if not already on login page, and not a booking endpoint
+    // NEVER redirect for booking endpoints - always let component handle the error
     if (httpError.status === 401 && 
         !currentPath.endsWith('/login') && 
         !currentPath.endsWith('/login/') &&
-        !isBookingTestError) {
+        !isBookingError) {
       const currentToken = localStorage.getItem('token')
       if (!currentToken || httpError.response?.data?.error === 'AUTH_ERROR') {
         localStorage.removeItem('token')
@@ -288,6 +303,12 @@ function handleError(error: unknown): never {
         return
       }
       // If token exists, don't redirect - let the component handle the error
+    }
+    
+    // For booking errors, never redirect - just throw
+    if (isBookingError && httpError.status === 401) {
+      console.log('[handleError] Booking 401 error - NOT redirecting, throwing error for component to handle')
+      throw error
     }
     
     // Don't show toast for client errors (400-499) - let components handle them
@@ -389,6 +410,12 @@ export const api = {
       const response = await http.post<T>(url, data, config)
       return { data: response }
     } catch (error) {
+      // For booking endpoints, don't use handleError which might redirect
+      // Just throw the error so the component can handle it
+      if (url.includes('/bookings')) {
+        console.log('[api.post] Booking endpoint error - throwing directly without handleError:', url)
+        throw error
+      }
       handleError(error)
     }
   },
