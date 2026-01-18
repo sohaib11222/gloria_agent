@@ -68,6 +68,29 @@ export default function LocationBrowser() {
         />
       )}
 
+      {/* Mock Data Warning */}
+      {locationsData?.hasMockData && (
+        <Card className="bg-yellow-50 border border-yellow-300">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-yellow-900">
+                  ⚠️ Test Data Warning
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Some locations shown are from test sources using mock adapters. These locations are for testing purposes only and may not reflect real availability.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Search and Filter */}
       <Card className="border border-gray-200">
         <CardHeader className="bg-slate-700 text-white">
@@ -159,6 +182,9 @@ export default function LocationBrowser() {
                       <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                         Coordinates
                       </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -169,6 +195,11 @@ export default function LocationBrowser() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                           {loc.place}
+                          {loc.isMock && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                              TEST
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {loc.country}
@@ -186,6 +217,17 @@ export default function LocationBrowser() {
                           {loc.latitude && loc.longitude
                             ? `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`
                             : '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {loc.isMock ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">
+                              Test Data
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                              Production
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { AgentInformation } from '../components/AgentInformation'
 import { EndpointConfiguration } from '../components/EndpointConfiguration'
 import { AgreementOffers } from '../components/AgreementOffers'
@@ -10,6 +11,7 @@ import { Badge } from '../components/ui/Badge'
 import toast from 'react-hot-toast'
 import { agreementsOffersApi } from '../api/agreementsOffers'
 import { endpointsApi } from '../api/endpoints'
+import api from '../lib/api'
 import { 
   LayoutDashboard, 
   FileText, 
@@ -22,7 +24,8 @@ import {
   PlayCircle, 
   Handshake,
   Shield,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-react'
 
 export default function AgentPage() {
@@ -36,6 +39,22 @@ export default function AgentPage() {
   const [allAgreements, setAllAgreements] = useState<any[]>([])
   const [showEndpointConfig, setShowEndpointConfig] = useState(false)
   const [showBookingTest, setShowBookingTest] = useState(false)
+
+  // Fetch source health status
+  const { data: sourcesHealth, isLoading: isLoadingHealth } = useQuery({
+    queryKey: ['sources-health'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/admin/sources/health')
+        return response.data
+      } catch (error) {
+        console.error('Failed to load source health:', error)
+        return { sources: [], hasMockSources: false }
+      }
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1,
+  })
 
   useEffect(() => {
     // Load user data from localStorage
@@ -251,25 +270,62 @@ export default function AgentPage() {
       </div>
 
       {/* Source health status strip */}
-      <Card className="bg-green-50 border border-green-300">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-600 rounded-md">
-                <Shield className="h-5 w-5 text-white" />
+      {isLoadingHealth ? (
+        <Card className="bg-gray-50 border border-gray-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-center gap-3">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+              <span className="text-sm text-gray-600">Checking source health...</span>
+            </div>
+          </CardContent>
+        </Card>
+      ) : sourcesHealth?.hasMockSources ? (
+        <Card className="bg-yellow-50 border border-yellow-300">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-600 rounded-md">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Test Sources Detected</p>
+                  <p className="text-xs text-yellow-700">
+                    Some sources are using mock adapters (test data only). Production data may be limited.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">All Sources Healthy</p>
-                <p className="text-xs text-gray-600">System operational and ready</p>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-yellow-200">
+                <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">Test Mode</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-green-200">
-              <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-              <span className="text-xs font-medium text-gray-700">Live</span>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-green-50 border border-green-300">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-600 rounded-md">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {sourcesHealth?.sources?.length > 0 
+                      ? `All ${sourcesHealth.sources.length} Source${sourcesHealth.sources.length !== 1 ? 's' : ''} Healthy`
+                      : 'All Sources Healthy'}
+                  </p>
+                  <p className="text-xs text-gray-600">System operational and ready</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-green-200">
+                <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-700">Live</span>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Onboarding steps */}
       {(!httpConfigured || !grpcConfigured || !bookingTestCompleted || !agreementAccepted) && (

@@ -7,12 +7,14 @@ export interface Location {
   iata_code?: string
   latitude?: number
   longitude?: number
+  isMock?: boolean
 }
 
 export interface LocationListResponse {
   items: Location[]
   next_cursor?: string
   total?: number
+  hasMockData?: boolean
 }
 
 export const locationsApi = {
