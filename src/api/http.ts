@@ -515,10 +515,13 @@ export class HttpClient {
         // Try to parse error response
         try {
           const errorData = await response.json()
-          if (errorData.message) {
-            error.message = errorData.message
+          // Always prioritize errorData.message over HTTP status text
+          if (errorData && typeof errorData === 'object') {
+            if (errorData.message) {
+              error.message = String(errorData.message)
+            }
+            (error as any).response = errorData
           }
-          (error as any).response = errorData
           
           // NEVER redirect for booking endpoints - let components handle all errors
           // This MUST be checked FIRST before any redirect logic

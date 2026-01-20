@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { authApi, VerifyEmailForm } from '../api/auth'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { OTPInput } from '../components/ui/OTPInput'
 import toast from 'react-hot-toast'
+import logoImage from '../assets/logo.jpg'
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export default function VerifyEmailPage() {
   const [email, setEmail] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
   const [isResending, setIsResending] = useState(false)
+  const lastSubmittedOtp = useRef<string>('')
 
   useEffect(() => {
     // Get email from location state or localStorage
@@ -30,32 +32,24 @@ export default function VerifyEmailPage() {
     }
   }, [location.state, navigate])
 
-  // Auto-submit when OTP is complete
-  useEffect(() => {
-    if (otp.length === 4 && !isLoading) {
-      handleVerify()
-    }
-  }, [otp])
-
-  // Resend timer countdown
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [resendTimer])
-
-  const handleOTPComplete = (completedOTP: string) => {
-    setOtp(completedOTP)
-  }
-
-  const handleVerify = async () => {
+  const handleVerify = useCallback(async () => {
     if (otp.length !== 4) {
       toast.error('Please enter a valid 4-digit OTP')
       return
     }
 
+    if (isLoading) {
+      return // Prevent multiple calls
+    }
+
+    // Prevent submitting the same OTP twice
+    if (lastSubmittedOtp.current === otp) {
+      return
+    }
+
     setIsLoading(true)
+    lastSubmittedOtp.current = otp
+    
     try {
       const response = await authApi.verifyEmail({
         email,
@@ -76,10 +70,25 @@ export default function VerifyEmailPage() {
       console.error('Email verification failed:', error)
       toast.error(error.response?.data?.message || 'Invalid OTP. Please try again.')
       setOtp('')
+      lastSubmittedOtp.current = '' // Reset last submitted OTP on error
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [otp, email, isLoading, navigate])
+
+  // Removed auto-submit - user must click the button to verify
+
+  // Resend timer countdown
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendTimer])
+
+  const handleOTPComplete = useCallback((completedOTP: string) => {
+    setOtp(completedOTP)
+  }, [])
 
   const handleResend = async () => {
     if (resendTimer > 0 || isResending) return
@@ -102,11 +111,11 @@ export default function VerifyEmailPage() {
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="bg-slate-700 rounded-md p-3">
-              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
+            <img 
+              src={logoImage} 
+              alt="Gloria Connect" 
+              className="h-16 w-auto object-contain"
+            />
           </div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-1">
             Verify Your Email
@@ -139,7 +148,7 @@ export default function VerifyEmailPage() {
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    Code entered - Verifying...
+                    Code entered - Click verify to continue
                   </p>
                 )}
               </div>

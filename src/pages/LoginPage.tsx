@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import toast from 'react-hot-toast'
+import logoImage from '../assets/logo.jpg'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -95,6 +96,13 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error('Login failed:', error)
+      console.log('Login error structure:', {
+        error,
+        response: error.response,
+        responseData: error.response?.data,
+        message: error.message,
+        code: error.code
+      })
       
       // Extract error code and message from various possible locations
       // Priority: response.data.error > response.error > code
@@ -104,10 +112,26 @@ export default function LoginPage() {
                        error.response?.data?.code
       
       // Priority: response.data.message > response.message > message
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.message || 
-                          error.message || 
-                          'Login failed. Please check your credentials.'
+      // But skip generic HTTP status messages like "HTTP 403: Forbidden"
+      let errorMessage = error.response?.data?.message || 
+                        error.response?.message || 
+                        error.message || 
+                        'Login failed. Please check your credentials.'
+      
+      // Check if errorMessage is a generic HTTP status message (e.g., "HTTP 403: Forbidden")
+      // If so, try to get the actual message from response.data
+      if (errorMessage.startsWith('HTTP ') && errorMessage.includes(':')) {
+        errorMessage = error.response?.data?.message || 
+                      error.response?.data?.error || 
+                      error.response?.message ||
+                      'Login failed. Please check your credentials.'
+      }
+      
+      console.log('Extracted error info:', {
+        errorCode,
+        errorMessage,
+        finalMessage: errorMessage
+      })
       
       // Always show the proper error message from the backend
       if (errorCode === 'NOT_APPROVED') {
@@ -130,11 +154,11 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="bg-slate-700 rounded-md p-3">
-              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
+            <img 
+              src={logoImage} 
+              alt="Gloria Connect" 
+              className="h-16 w-auto object-contain"
+            />
           </div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-1">
             Agent Portal

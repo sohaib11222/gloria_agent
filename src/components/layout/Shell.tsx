@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { LogOut, Bell, Menu, X, LayoutDashboard, Search, FileText, Calendar, MapPin, BookOpen, MessageCircle } from 'lucide-react'
 import { NotificationsDrawer } from '../NotificationsDrawer'
 import api from '../../lib/api'
+import logoImage from '../../assets/logo.jpg'
 
 export const Shell: React.FC = () => {
   const navigate = useNavigate()
@@ -60,11 +61,11 @@ export const Shell: React.FC = () => {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-slate-700 border-b border-slate-800">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-white/20 rounded-md">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
+            <img 
+              src={logoImage} 
+              alt="Gloria Connect" 
+              className="h-8 w-auto object-contain"
+            />
             <h1 className="text-lg font-bold text-white">Gloria Connect - Agent</h1>
           </div>
           <button
@@ -96,11 +97,11 @@ export const Shell: React.FC = () => {
       >
         <div className="flex items-center px-6 py-5 border-b border-gray-200 bg-slate-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-md">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
+            <img 
+              src={logoImage} 
+              alt="Gloria Connect" 
+              className="h-10 w-auto object-contain"
+            />
             <div>
               <h1 className="text-xl font-bold text-white">Gloria Connect - Agent</h1>
               <p className="text-xs text-slate-200">Portal</p>
@@ -192,11 +193,11 @@ export const Shell: React.FC = () => {
         <header className="hidden lg:block bg-white border-b border-gray-200">
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-2 bg-slate-700 rounded-md">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
+              <img 
+                src={logoImage} 
+                alt="Gloria Connect" 
+                className="h-10 w-auto object-contain"
+              />
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Gloria Connect - Agent</h2>
                 <p className="text-xs text-gray-500">Portal Dashboard</p>

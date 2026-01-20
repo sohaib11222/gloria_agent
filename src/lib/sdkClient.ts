@@ -75,18 +75,33 @@ class CarHireSDKClient {
         return response
       } catch (error: any) {
         // HttpClient sets error.response to the errorData object directly (not error.response.data)
-        // It also sets error.message = errorData.message if it exists
-        // So we need to check error.response.message or error.message
-        const errorMessage = error.response?.message || 
-                            error.message || 
-                            'Login failed'
+        // It also sets error.message = errorData.message if it exists, otherwise "HTTP 403: Forbidden"
+        // Priority: error.response.message > error.message (but only if error.message is not generic HTTP status)
+        const rawMessage = error.response?.message || error.message || 'Login failed'
+        // Check if error.message is a generic HTTP status message (e.g., "HTTP 403: Forbidden")
+        const isGenericHttpMessage = rawMessage.startsWith('HTTP ') && rawMessage.includes(':')
+        const errorMessage = isGenericHttpMessage 
+          ? (error.response?.message || 'Login failed')
+          : rawMessage
+        
         const errorCode = error.response?.error || 
+                         error.response?.code ||
                          'LOGIN_ERROR'
         const status = error.status || 500
         
         // Preserve the original error response data for proper error handling
         // Include all fields from error.response (which is the errorData object)
         const errorDetails = error.response || {}
+        
+        // Log for debugging
+        console.log('[SDK auth.login] Error details:', {
+          errorMessage,
+          errorCode,
+          status,
+          errorResponse: error.response,
+          errorMessageRaw: error.message,
+          errorDetails
+        })
         
         throw new SDKError(
           errorMessage,
@@ -112,11 +127,50 @@ class CarHireSDKClient {
         }>('/auth/register', data)
         return response
       } catch (error: any) {
+        // HttpClient sets error.response to the errorData object directly (not error.response.data)
+        // It also sets error.message = errorData.message if it exists
+        // So we need to check error.response.message or error.message
+        // IMPORTANT: Prioritize error.response.message over error.message to avoid HTTP status text
+        let errorMessage = 'Registration failed'
+        let errorCode = 'REGISTER_ERROR'
+        
+        // First check error.response (the errorData object from backend)
+        if (error.response) {
+          if (error.response.message) {
+            errorMessage = String(error.response.message)
+          }
+          if (error.response.error) {
+            errorCode = String(error.response.error)
+          }
+        }
+        
+        // Fallback to error.message only if it's not HTTP status text
+        if (errorMessage === 'Registration failed' && error.message) {
+          const msg = String(error.message)
+          if (!msg.startsWith('HTTP ') && !msg.includes('Conflict') && !msg.includes('409')) {
+            errorMessage = msg
+          }
+        }
+        
+        const status = error.status || 500
+        
+        // Preserve the original error response data for proper error handling
+        // Include all fields from error.response (which is the errorData object)
+        const errorDetails = error.response || {}
+        
+        console.log('[SDK register] Error details:', {
+          errorMessage,
+          errorCode,
+          status,
+          'error.response': error.response,
+          'error.message': error.message
+        })
+        
         throw new SDKError(
-          error.message || 'Registration failed',
-          error.status || 500,
-          'REGISTER_ERROR',
-          error
+          errorMessage,
+          status,
+          errorCode,
+          { ...errorDetails, originalError: error }
         )
       }
     },
@@ -235,19 +289,19 @@ function handleError(error: unknown): never {
     }
     
     // Don't show toast for errors that will be handled by the component
-    // Only show toast for unexpected errors (not 400, 401, or 403)
-    // 403 errors should be handled by components to show proper messages
-    if (error.status !== 400 && error.status !== 401 && error.status !== 403) {
+    // Only show toast for unexpected errors (not 400, 401, 403, or 409)
+    // 403 and 409 errors should be handled by components to show proper messages
+    if (error.status !== 400 && error.status !== 401 && error.status !== 403 && error.status !== 409) {
       const message = error.message || 'An error occurred'
       toast.error(message)
     }
     
     // Convert SDKError to axios-like error format
     // Preserve the original error message and include error code
-    const axiosError = new Error(error.message || 'An error occurred') as any
-    // Extract error code and message from details if available
+    // Prioritize details.message over error.message (which might be HTTP status text)
     const errorCode = error.code || error.details?.error
-    const errorMessage = error.message || error.details?.message
+    const errorMessage = error.details?.message || error.message || 'An error occurred'
+    const axiosError = new Error(errorMessage) as any
     axiosError.response = {
       status: error.status,
       statusText: errorCode || 'Error',
@@ -361,8 +415,21 @@ export const api = {
           if (loginError instanceof SDKError) {
             // Extract message and error code from details if available (preserves original backend response)
             // The details object contains the original error.response (which is the errorData from backend)
-            const errorMessage = loginError.details?.message || loginError.message
-            const errorCode = loginError.details?.error || loginError.code
+            // Priority: details.message > loginError.message (but only if loginError.message is not generic HTTP status)
+            const rawMessage = loginError.details?.message || loginError.message
+            const isGenericHttpMessage = rawMessage.startsWith('HTTP ') && rawMessage.includes(':')
+            const errorMessage = isGenericHttpMessage 
+              ? (loginError.details?.message || 'Login failed')
+              : rawMessage
+            const errorCode = loginError.details?.error || loginError.code || 'LOGIN_ERROR'
+            
+            console.log('[SDK api.post /auth/login] Converting SDKError to axios format:', {
+              errorMessage,
+              errorCode,
+              status: loginError.status,
+              details: loginError.details,
+              originalMessage: loginError.message
+            })
             
             const axiosError = new Error(errorMessage) as any
             axiosError.response = {
@@ -383,8 +450,48 @@ export const api = {
       }
       
       if (url === '/auth/register') {
-        const response = await sdkClient.auth.register(data)
-        return { data: response as T }
+        try {
+          const response = await sdkClient.auth.register(data)
+          return { data: response as T }
+        } catch (registerError: any) {
+          // For register errors, convert SDKError to axios-like format and re-throw
+          // Don't call handleError here - let the register page handle it
+          if (registerError instanceof SDKError) {
+            // Extract message and error code from details if available (preserves original backend response)
+            // The details object contains the original error.response (which is the errorData from backend)
+            // IMPORTANT: Prioritize details.message over registerError.message
+            let errorMessage = registerError.details?.message || registerError.message || 'Registration failed'
+            let errorCode = registerError.details?.error || registerError.code || 'REGISTER_ERROR'
+            
+            // Ensure we don't use HTTP status text
+            if (String(errorMessage).startsWith('HTTP ') || String(errorMessage).includes('Conflict')) {
+              // If we got HTTP status text, try to get the real message from details
+              errorMessage = registerError.details?.message || 'Registration failed'
+            }
+            
+            console.log('[API wrapper register] Converting error:', {
+              errorMessage,
+              errorCode,
+              'registerError.message': registerError.message,
+              'registerError.details': registerError.details
+            })
+            
+            const axiosError = new Error(String(errorMessage)) as any
+            axiosError.response = {
+              status: registerError.status,
+              statusText: String(errorCode) || 'Error',
+              data: {
+                error: String(errorCode),
+                message: String(errorMessage),
+                // Include all fields from details (which contains the original error response from backend)
+                ...(registerError.details && typeof registerError.details === 'object' ? registerError.details : {}),
+              },
+            }
+            axiosError.status = registerError.status
+            throw axiosError
+          }
+          throw registerError
+        }
       }
       
       if (url === '/auth/verify-email') {
