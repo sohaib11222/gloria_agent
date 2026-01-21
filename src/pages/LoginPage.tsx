@@ -104,6 +104,18 @@ export default function LoginPage() {
         code: error.code
       })
       
+      // Check if this is a CORS error
+      if (error.isCorsError || error.code === 'CORS_ERROR') {
+        toast.error('CORS error: Unable to connect to server. Please check your network connection and ensure the server CORS configuration is correct.')
+        return
+      }
+      
+      // Check if this is a true network error (no response received)
+      if (error.isNetworkError || (!error.response && error.message?.includes('Network'))) {
+        toast.error('Network error. Please check your internet connection and try again.')
+        return
+      }
+      
       // Extract error code and message from various possible locations
       // Priority: response.data.error > response.error > code
       const errorCode = error.response?.data?.error || 
@@ -111,20 +123,44 @@ export default function LoginPage() {
                        error.code ||
                        error.response?.data?.code
       
-      // Priority: response.data.message > response.message > message
-      // But skip generic HTTP status messages like "HTTP 403: Forbidden"
-      let errorMessage = error.response?.data?.message || 
-                        error.response?.message || 
-                        error.message || 
-                        'Login failed. Please check your credentials.'
+      // Priority order: 
+      // 1. response.data.message (backend message)
+      // 2. response.data.error (backend error code as message)
+      // 3. response.message (axios response message)
+      // 4. Generic fallback based on status code
+      // 5. error.message (last resort, but filter out generic messages)
+      let errorMessage: string
       
-      // Check if errorMessage is a generic HTTP status message (e.g., "HTTP 403: Forbidden")
-      // If so, try to get the actual message from response.data
-      if (errorMessage.startsWith('HTTP ') && errorMessage.includes(':')) {
-        errorMessage = error.response?.data?.message || 
-                      error.response?.data?.error || 
-                      error.response?.message ||
-                      'Login failed. Please check your credentials.'
+      if (error.response?.data?.message) {
+        // Always use backend message if available
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.error) {
+        // Use error code as message if no message field
+        errorMessage = error.response.data.error
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Invalid credentials. Please check your email and password.'
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Access denied. Please contact support.'
+      } else if (error.response?.status) {
+        // We have a response but no message - use a generic message based on status
+        errorMessage = `Request failed with status ${error.response.status}. Please try again.`
+      } else {
+        // No response at all
+        errorMessage = 'Login failed. Please check your credentials.'
+      }
+      
+      // Final check: if errorMessage is still a generic message, try one more time to get backend message
+      const genericMessages = ['Network Error', 'Network error', 'Error', 'Request failed', 'Unauthorized', 'Forbidden', 'HTTP 401:', 'HTTP 403:']
+      if (genericMessages.some(msg => errorMessage === msg || errorMessage.includes(msg))) {
+        // Try to extract from response one more time
+        if (error.response?.data) {
+          const data = error.response.data
+          if (typeof data === 'object') {
+            errorMessage = data.message || data.error || errorMessage
+          } else if (typeof data === 'string') {
+            errorMessage = data
+          }
+        }
       }
       
       console.log('Extracted error info:', {

@@ -496,7 +496,16 @@ export class HttpClient {
         }
       }
       
-      const response = await fetch(url, fetchConfig)
+      // Set referrerPolicy to unsafe-url to allow referrer in all cases
+      // Explicitly set CORS mode and credentials to match backend configuration
+      const finalFetchConfig: RequestInit = {
+        ...fetchConfig,
+        mode: 'cors', // Explicitly set CORS mode
+        credentials: 'omit', // Match backend credentials: false
+        referrerPolicy: 'unsafe-url' as ReferrerPolicy,
+      }
+      
+      const response = await fetch(url, finalFetchConfig)
 
       if (!response.ok) {
         const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as HttpError
@@ -599,6 +608,15 @@ export class HttpClient {
         throw error
       }
 
+      // Check if response was blocked by CORS
+      if (response.type === 'opaque' || response.type === 'opaqueredirect') {
+        const corsError = new Error('CORS error: Response was blocked by browser CORS policy. Please check server CORS configuration.') as HttpError
+        corsError.status = 0
+        corsError.statusText = 'CORS Error'
+        ;(corsError as any).isCorsError = true
+        throw corsError
+      }
+
       const contentType = response.headers.get('content-type')
       if (contentType && contentType.includes('application/json')) {
         return await response.json()
@@ -606,6 +624,16 @@ export class HttpClient {
       
       return await response.text() as T
     } catch (error) {
+      // Check for CORS errors
+      if (error instanceof TypeError && error.message?.includes('Failed to fetch')) {
+        const corsError = new Error('CORS error: Unable to connect to server. Please check your network connection and CORS configuration.') as HttpError
+        corsError.status = 0
+        corsError.statusText = 'CORS Error'
+        ;(corsError as any).isCorsError = true
+        ;(corsError as any).isNetworkError = true
+        throw corsError
+      }
+      
       // If it's already an HttpError, just throw it
       if (error instanceof Error && 'status' in error) {
         throw error
@@ -616,6 +644,7 @@ export class HttpClient {
       const httpError = new Error(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`) as HttpError
       httpError.status = 0
       httpError.statusText = 'Network Error'
+      ;(httpError as any).isNetworkError = true
       // Don't redirect on network errors - let the component handle them
       throw httpError
     }
