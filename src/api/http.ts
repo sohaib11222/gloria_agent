@@ -9,7 +9,39 @@ export interface HttpOptions extends RequestInit {
 
 import { API_BASE_URL } from '../lib/apiConfig'
 
-const DEFAULT_BASE_URL = API_BASE_URL
+// Get API base URL - recalculate it to ensure it's current and fix protocol if needed
+function getCurrentApiBaseUrl(): string {
+  // If explicitly set in env, use that (but fix protocol if needed)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    const envUrl = import.meta.env.VITE_API_BASE_URL
+    // If env URL is HTTP but page is HTTPS, convert to HTTPS to avoid mixed content
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && envUrl.startsWith('http://')) {
+      console.warn('⚠️ Converting HTTP API URL to HTTPS to avoid mixed content:', envUrl)
+      return envUrl.replace('http://', 'https://')
+    }
+    return envUrl
+  }
+
+  // Auto-detect protocol based on current page protocol
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https:' : 'http:'
+  
+  // Check if we're on localhost
+  if (typeof window !== 'undefined') {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    if (isLocalhost && !import.meta.env.PROD) {
+      return 'http://localhost:8080'
+    }
+  }
+  
+  // Production: use production API with protocol matching
+  return `${protocol}//api.gloriaconnect.com/api`
+}
+
+const DEFAULT_BASE_URL = getCurrentApiBaseUrl()
+
+// Log the API base URL for debugging
+console.log('🔧 API Base URL configured (Agent):', DEFAULT_BASE_URL)
+console.log('🔧 Current page protocol:', typeof window !== 'undefined' ? window.location.protocol : 'N/A')
 
 export class HttpClient {
   private baseURL: string
@@ -496,8 +528,21 @@ export class HttpClient {
         }
       }
       
-      // Set referrerPolicy to unsafe-url to allow referrer in all cases
-      // Explicitly set CORS mode and credentials to match backend configuration
+      // CRITICAL: Fix protocol mismatch before making the request
+      // If page is HTTPS but URL is HTTP, convert to HTTPS to avoid mixed content blocking
+      let finalUrl = url
+      if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+        finalUrl = url.replace('http://', 'https://')
+        console.warn('⚠️ Fixing protocol mismatch (Agent):', {
+          original: url,
+          corrected: finalUrl,
+          pageProtocol: window.location.protocol
+        })
+      }
+      
+      // CRITICAL: Set CORS mode and credentials to match backend configuration
+      // Backend uses Access-Control-Allow-Credentials: false, so we use credentials: 'omit'
+      // DO NOT set any CORS headers manually - browser handles this automatically
       const finalFetchConfig: RequestInit = {
         ...fetchConfig,
         mode: 'cors', // Explicitly set CORS mode
@@ -505,12 +550,44 @@ export class HttpClient {
         referrerPolicy: 'unsafe-url' as ReferrerPolicy,
       }
       
-      const response = await fetch(url, finalFetchConfig)
+      const response = await fetch(finalUrl, finalFetchConfig)
+      
+      // Log response for debugging auth endpoints
+      if (endpoint.includes('/auth/login') || endpoint.includes('/auth/register')) {
+        console.log('📥 Response received (Agent):', {
+          url: finalUrl,
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        })
+      }
 
       if (!response.ok) {
-        const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as HttpError
+        // Try to parse error response first
+        let errorData: any = {}
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json()
+          } else {
+            const text = await response.text()
+            if (text) {
+              try {
+                errorData = JSON.parse(text)
+              } catch {
+                errorData = { message: text }
+              }
+            }
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse error response:', parseError)
+        }
+        
+        const error = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`) as HttpError
         error.status = response.status
         error.statusText = response.statusText
+        ;(error as any).response = errorData
         
         // Check if this is a booking endpoint BEFORE any processing
         const isBookingEndpoint = endpoint.includes('/bookings')
@@ -520,17 +597,6 @@ export class HttpClient {
           (error as any).isBookingError = true
           (error as any).endpoint = endpoint
         }
-        
-        // Try to parse error response
-        try {
-          const errorData = await response.json()
-          // Always prioritize errorData.message over HTTP status text
-          if (errorData && typeof errorData === 'object') {
-            if (errorData.message) {
-              error.message = String(errorData.message)
-            }
-            (error as any).response = errorData
-          }
           
           // NEVER redirect for booking endpoints - let components handle all errors
           // This MUST be checked FIRST before any redirect logic
@@ -617,12 +683,30 @@ export class HttpClient {
         throw corsError
       }
 
+      // Parse response body
       const contentType = response.headers.get('content-type')
       if (contentType && contentType.includes('application/json')) {
-        return await response.json()
+        try {
+          const data = await response.json()
+          // Log successful response for auth endpoints
+          if (endpoint.includes('/auth/login') || endpoint.includes('/auth/register')) {
+            console.log('✅ Auth response parsed (Agent):', {
+              url: finalUrl,
+              status: response.status,
+              hasData: !!data,
+              dataKeys: data ? Object.keys(data) : []
+            })
+          }
+          return data as T
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError)
+          throw new Error('Failed to parse server response')
+        }
       }
       
-      return await response.text() as T
+      // For non-JSON responses, return as text
+      const text = await response.text()
+      return text as T
     } catch (error) {
       // Check for CORS errors
       if (error instanceof TypeError && error.message?.includes('Failed to fetch')) {
