@@ -619,28 +619,21 @@ export class HttpClient {
             throw error
           }
           
-          // Only redirect to login for actual authentication errors (401)
-          // Don't redirect for validation errors (400) or other client errors
+          // On 401 (Invalid token / unauthenticated): always logout and redirect to login.
+          // Exclude only schema/validation errors; AUTH_ERROR / "Invalid token" must redirect.
           // NOTE: isBookingEndpoint check above ensures we never get here for booking endpoints
           if (response.status === 401 && 
               errorData.error !== 'SCHEMA_ERROR' && 
               errorData.error !== 'VALIDATION_ERROR') {
-            // Check if token actually exists - if it does, the 401 might be for a different reason
-            const currentToken = localStorage.getItem('token')
-            if (!currentToken || errorData.error === 'AUTH_ERROR') {
-              localStorage.removeItem('token')
-              localStorage.removeItem('user')
-              localStorage.removeItem('refreshToken')
-              // Get base path (matches vite.config.js and main.jsx)
-              const basePath = import.meta.env.PROD ? '/agent' : ''
-              const loginPath = `${basePath}/login`
-              const currentPath = window.location.pathname
-              // Only redirect if we're not already on the login page
-              if (!currentPath.endsWith('/login') && !currentPath.endsWith('/login/')) {
-                window.location.href = loginPath
-              }
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            localStorage.removeItem('refreshToken')
+            const basePath = import.meta.env.PROD ? '/agent' : ''
+            const loginPath = `${basePath}/login`
+            const currentPath = window.location.pathname
+            if (!currentPath.endsWith('/login') && !currentPath.endsWith('/login/')) {
+              window.location.href = loginPath
             }
-            // If token exists, don't redirect - let the component handle the error
           }
         } catch (parseError) {
           // NEVER redirect for booking endpoints - check FIRST before any redirect logic
@@ -653,21 +646,17 @@ export class HttpClient {
             throw error
           }
           
-          // If we can't parse JSON, only redirect on 401 if it's not a network error
+          // If we can't parse JSON, on 401 still clear auth and redirect
           if (response.status === 401 && error.status !== 0) {
-            const currentToken = localStorage.getItem('token')
-            if (!currentToken) {
-              localStorage.removeItem('token')
-              localStorage.removeItem('user')
-              localStorage.removeItem('refreshToken')
-              const basePath = import.meta.env.PROD ? '/agent' : ''
-              const loginPath = `${basePath}/login`
-              const currentPath = window.location.pathname
-              if (!currentPath.endsWith('/login') && !currentPath.endsWith('/login/')) {
-                window.location.href = loginPath
-              }
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            localStorage.removeItem('refreshToken')
+            const basePath = import.meta.env.PROD ? '/agent' : ''
+            const loginPath = `${basePath}/login`
+            const currentPath = window.location.pathname
+            if (!currentPath.endsWith('/login') && !currentPath.endsWith('/login/')) {
+              window.location.href = loginPath
             }
-            // If token exists, don't redirect - let the component handle the error
           }
         }
         

@@ -273,19 +273,17 @@ function handleError(error: unknown): never {
     const loginPath = `${basePath}/login`
     const currentPath = window.location.pathname
     
+    // On 401 (Invalid token / AUTH_ERROR): always logout and redirect to login
     if (error.status === 401 && 
         error.code !== 'SCHEMA_ERROR' && 
         error.code !== 'VALIDATION_ERROR' &&
         !currentPath.endsWith('/login') && !currentPath.endsWith('/login/')) {
-      // Check if token still exists - if not, definitely redirect
-      const token = localStorage.getItem('token')
-      if (!token || error.code === 'AUTH_ERROR') {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        window.location.href = loginPath
-        return // Don't show toast or throw if redirecting
-      }
-      // If token exists but we got 401, might be expired - let component handle it
+      // Always clear auth and redirect on 401 (including AUTH_ERROR / "Invalid token")
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('refreshToken')
+      window.location.href = loginPath
+      return // Don't show toast or throw if redirecting
     }
     
     // Don't show toast for errors that will be handled by the component
@@ -342,21 +340,16 @@ function handleError(error: unknown): never {
       throw error
     }
     
-    // Only redirect on 401, and only if not already on login page, and not a booking endpoint
-    // NEVER redirect for booking endpoints - always let component handle the error
+    // On 401 (Invalid token / unauthenticated): always logout and redirect to login
     if (httpError.status === 401 && 
         !currentPath.endsWith('/login') && 
         !currentPath.endsWith('/login/') &&
         !isBookingError) {
-      const currentToken = localStorage.getItem('token')
-      if (!currentToken || httpError.response?.data?.error === 'AUTH_ERROR') {
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        localStorage.removeItem('refreshToken')
-        window.location.href = loginPath
-        return
-      }
-      // If token exists, don't redirect - let the component handle the error
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('refreshToken')
+      window.location.href = loginPath
+      return
     }
     
     // For booking errors, never redirect - just throw
