@@ -10,6 +10,8 @@ import api from '../lib/api'
 import { locationsApi, Location } from '../api/locations'
 import { ErrorDisplay } from '../components/ui/ErrorDisplay'
 import { showToast } from '../components/ui/ToastConfig'
+import { sourceGroupsApi } from '../api/companies'
+import { useLocation } from 'react-router-dom'
 
 interface AvailabilityOffer {
   supplier_offer_ref: string
@@ -44,12 +46,17 @@ interface SavedSearch {
 }
 
 export default function AvailabilityTest() {
+  const location = useLocation()
+  const isPricingMode = location.pathname.includes('/pricing')
+
   const [pickup, setPickup] = useState('')
   const [dropoff, setDropoff] = useState('')
   const [pickupDate, setPickupDate] = useState('')
   const [returnDate, setReturnDate] = useState('')
   const [driverAge, setDriverAge] = useState('')
   const [agreementRef, setAgreementRef] = useState('')
+  const [searchScope, setSearchScope] = useState<'all' | 'agreement' | 'group'>('agreement')
+  const [selectedGroupId, setSelectedGroupId] = useState('')
   const [agreements, setAgreements] = useState<Array<{ id: string; agreementRef: string; status: string }>>([])
   const [selectedAgreementId, setSelectedAgreementId] = useState('')
 
@@ -78,6 +85,12 @@ export default function AvailabilityTest() {
   const [lastSeq, setLastSeq] = useState<number>(0)
   const lastSeqRef = useRef<number>(0)
   const requestIdRef = useRef<string | null>(null)
+
+  const groupsQuery = useQuery({
+    queryKey: ['agent-source-groups-for-availability'],
+    queryFn: () => sourceGroupsApi.list(),
+    retry: 1,
+  })
 
   // Load saved searches from localStorage
   useEffect(() => {
@@ -213,7 +226,16 @@ export default function AvailabilityTest() {
         dropoff_iso: new Date(returnDate).toISOString(),
       }
       if (driverAge) payload.driver_age = Number(driverAge)
-      if (agreementRef) payload.agreement_refs = [agreementRef]
+
+      if (searchScope === 'group' && selectedGroupId) {
+        payload.group_id = selectedGroupId
+      } else if (searchScope === 'agreement' && agreementRef) {
+        payload.agreement_refs = [agreementRef]
+      } else if (searchScope === 'all') {
+        const refs = agreements.map((a) => a.agreementRef).filter(Boolean)
+        if (refs.length > 0) payload.agreement_refs = refs
+      }
+
       const { data } = await api.post<SubmitResp>('/availability/submit', payload)
       return data
     },
@@ -567,6 +589,18 @@ export default function AvailabilityTest() {
       showToast.error('Return date must be after pickup date')
       return
     }
+    if (searchScope === 'group' && !selectedGroupId) {
+      showToast.error('Please select a group for group-based search')
+      return
+    }
+    if (searchScope === 'agreement' && !agreementRef) {
+      showToast.error('Please select an agreement')
+      return
+    }
+    if (searchScope === 'all' && agreements.length === 0) {
+      showToast.error('No agreements available for all-agreement search')
+      return
+    }
     submit.mutate()
   }
 
@@ -671,10 +705,12 @@ export default function AvailabilityTest() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-semibold">Availability</h1>
+          <h1 className="text-2xl font-semibold">{isPricingMode ? 'Pricing' : 'Availability'}</h1>
         </div>
         <p className="text-slate-200 text-sm">
-          Search for available vehicles from sources with active agreements.
+          {isPricingMode
+            ? 'Search live prices from selected agreements or saved groups of companies.'
+            : 'Search for available vehicles from sources with active agreements.'}
         </p>
       </div>
 
@@ -704,18 +740,53 @@ export default function AvailabilityTest() {
               )}
               <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Search Scope</label>
+                <select
+                  className="mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white"
+                  value={searchScope}
+                  onChange={(e) => setSearchScope(e.target.value as 'all' | 'agreement' | 'group')}
+                >
+                  <option value="agreement">Single Agreement</option>
+                  <option value="group">Agreement Group</option>
+                  <option value="all">All My Agreements</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Agreement</label>
                 <select
                   className="mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white"
                   value={selectedAgreementId}
                   onChange={(e) => setSelectedAgreementId(e.target.value)}
+                  disabled={searchScope !== 'agreement'}
                 >
-                  <option value="">No specific agreement (global)</option>
+                  <option value="">Select agreement...</option>
                   {agreements.map(a => (
                     <option key={a.id} value={a.id}>{a.agreementRef} ({a.status})</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Agreement Group</label>
+                <select
+                  className="mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 bg-white"
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  disabled={searchScope !== 'group'}
+                >
+                  <option value="">Select group...</option>
+                  {(groupsQuery.data?.items || []).map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} ({g.agreements.length})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-3">
+                <p className="text-xs text-gray-500">
+                  Use <strong>Single Agreement</strong> for one contract, <strong>Agreement Group</strong> for companies grouped in the Companies page,
+                  or <strong>All My Agreements</strong> to search every agreement in your account.
+                </p>
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Pickup (UN/LOCODE)</label>
@@ -839,7 +910,7 @@ export default function AvailabilityTest() {
                                   <span>•</span>
                                   <span>{offer.rate_plan_code}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md inline-flex">
+                                <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md">
                                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />

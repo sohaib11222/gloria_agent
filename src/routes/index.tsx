@@ -10,8 +10,10 @@ import VerifyEmailPage from '../pages/VerifyEmailPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import AgentPage from '../pages/AgentPage'
 import AvailabilityTest from '../pages/AvailabilityTest'
+import Companies from '../pages/Companies'
 import Agreements from '../pages/Agreements'
 import MyBookings from '../pages/MyBookings'
+import CancelBooking from '../pages/CancelBooking'
 import LocationBrowser from '../pages/LocationBrowser'
 import Support from '../pages/Support'
 import DocsPage from '../pages/Docs'
@@ -39,8 +41,11 @@ export const AppRoutes: React.FC = () => {
       }>
         <Route path="agent" element={<AgentPage />} />
         <Route path="availability" element={<AvailabilityTest />} />
+        <Route path="pricing" element={<AvailabilityTest />} />
+        <Route path="companies" element={<Companies />} />
         <Route path="agreements" element={<Agreements />} />
         <Route path="bookings" element={<MyBookings />} />
+        <Route path="cancel" element={<CancelBooking />} />
         <Route path="locations" element={<LocationBrowser />} />
         <Route path="support" element={<Support />} />
         <Route path="docs" element={<DocsPage />} />

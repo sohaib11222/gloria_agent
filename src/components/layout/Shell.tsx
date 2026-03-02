@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { LogOut, Bell, Menu, X, LayoutDashboard, Search, FileText, Calendar, MapPin, BookOpen, MessageCircle } from 'lucide-react'
+import { LogOut, Bell, Menu, X, LayoutDashboard, Search, FileText, Calendar, MapPin, BookOpen, MessageCircle, XCircle, Building2, DollarSign } from 'lucide-react'
 import { NotificationsDrawer } from '../NotificationsDrawer'
 import api from '../../lib/api'
 import logoImage from '../../assets/logo.jpg'
@@ -11,8 +11,11 @@ export const Shell: React.FC = () => {
   const navItems = [
     { path: '/agent', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/availability', label: 'Availability', icon: Search },
+    { path: '/pricing', label: 'Pricing', icon: DollarSign },
+    { path: '/companies', label: 'Companies', icon: Building2 },
     { path: '/agreements', label: 'Agreements', icon: FileText },
     { path: '/bookings', label: 'My Bookings', icon: Calendar },
+    { path: '/cancel', label: 'Cancel Booking', icon: XCircle },
     { path: '/locations', label: 'Locations', icon: MapPin },
     { path: '/support', label: 'Support', icon: MessageCircle },
     { path: '/docs', label: 'API Reference', icon: BookOpen },
